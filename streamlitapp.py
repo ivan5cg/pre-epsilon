@@ -1136,7 +1136,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
     return fig
 
 
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5,col6 = st.columns(5)
 
 # Initialize session state for start and end dates if not already set
 if 'start_date' not in st.session_state or 'end_date' not in st.session_state:
