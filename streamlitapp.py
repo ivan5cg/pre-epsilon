@@ -1106,7 +1106,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
                 title='Sharpe Ratio',
                 tickmode='array',
                 tickvals=[min_sharpe, (min_sharpe + max_sharpe) / 2, max_sharpe],
-                ticktext=[f'{min_sharpe:.1f}', '0', f'{max_sharpe:.1f}+']
+                ticktext=[f'{min_sharpe:.1f}', '0', f'{max_sharpe:.1f}']
             ),
             cmin=min_sharpe,
             cmax=max_sharpe,
@@ -1132,7 +1132,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
     # Update layout
     fig.update_layout(
         title={
-            'text': f'Asset Performance: Returns vs Volatility ({start_date.date()} to {end_date.date()})',
+            'text': f'Asset Performance: Returns vs Volatility from {start_date.date()} to {end_date.date()})',
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
