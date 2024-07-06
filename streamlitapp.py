@@ -1072,10 +1072,10 @@ def create_performance_plot(rendimientos, start_date, end_date):
 
     # Create a color scale based on Sharpe Ratio
     color_scale = [
-        [0, 'rgb(165,0,38)'],
-        [0.25, 'rgb(215,48,39)'],
-        [0.5, 'rgb(244,109,67)'],
-        [0.75, 'rgb(253,174,97)'],
+        [-0.5, 'rgb(165,0,38)'],
+        [0, 'rgb(215,48,39)'],
+        [0.25, 'rgb(244,109,67)'],
+        [0.50, 'rgb(253,174,97)'],
         [1, 'rgb(26,152,80)']
     ]
 
@@ -1115,7 +1115,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
     # Update layout
     fig.update_layout(
         title={
-            'text': f'Asset Performance: Returns vs Volatility ({start_date.date()} to {end_date.date()})',
+            'text': f'Asset Performance: Returns vs Volatility from{start_date.date()} to {end_date.date()}',
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
