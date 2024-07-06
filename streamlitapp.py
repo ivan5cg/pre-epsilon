@@ -1024,7 +1024,7 @@ with col3:
     reference_column = st.selectbox('Reference Column', rendimientos_corr.columns, index=rendimientos_corr.columns.get_loc('1.1 World'))
 
 with col4:
-    window = st.slider('Rolling Window (days)', min_value=5, max_value=100, value=30)
+    window = st.slider('Rolling Window (days)', min_value=2, max_value=180, value=30)
 
 # Convert dates to string format
 start_date = start_date.strftime('%Y-%m-%d')
