@@ -129,13 +129,19 @@ def process_portfolio_data(opcion_seleccionada):
     precios = precios.fillna(method="ffill")
 
     # Rename columns
-    column_mapping = {
+    column_mapping_prices = {
         'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio',
         'ZPRV.DE': '1.3 USA Small Value', '0P0001AINF.F': '1.1 World', '0P0001AINL.F': '1.4 Emergentes',
         'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla',
         'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
     }
-    precios.rename(columns=column_mapping, inplace=True)
+
+    column_mapping_else = {'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
+    'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
+    'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
+                        }
+
+    precios.rename(columns=column_mapping_prices, inplace=True)
     precios = precios.sort_index(axis=1)
 
     # Calculate returns
@@ -150,7 +156,7 @@ def process_portfolio_data(opcion_seleccionada):
     for i in movimientos["Description"].unique():
         posiciones[i] = movimientos[movimientos["Description"] == i].cumsum()["Flow unidades"]
     posiciones = posiciones.fillna(method="ffill").fillna(0)
-    posiciones.rename(columns=column_mapping, inplace=True)
+    posiciones.rename(columns=column_mapping_else, inplace=True)
     posiciones = posiciones.sort_index(axis=1)
 
     # Calculate cost
@@ -158,7 +164,7 @@ def process_portfolio_data(opcion_seleccionada):
     for i in movimientos["Description"].unique():
         coste[i] = movimientos[movimientos["Description"] == i].cumsum()["Flow"]
     coste = coste.fillna(method="ffill").fillna(0)
-    coste.rename(columns=column_mapping, inplace=True)
+    coste.rename(columns=column_mapping_else, inplace=True)
     coste = coste[posiciones.columns]
 
     # Calculate value and weights
@@ -173,7 +179,7 @@ def process_portfolio_data(opcion_seleccionada):
     pl = valor.add(coste)
 
     # Update movimientos
-    movimientos.replace(column_mapping, inplace=True)
+    movimientos.replace(column_mapping_else, inplace=True)
     movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index]).cumsum()
 
     return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor,benchmark,rendimiento_portfolio
