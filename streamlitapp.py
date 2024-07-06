@@ -1072,11 +1072,11 @@ def create_performance_plot(rendimientos, start_date, end_date):
 
     # Create a color scale based on Sharpe Ratio
     color_scale = [
-        [-0.5, 'rgb(165,0,38)'],
-        [0, 'rgb(215,48,39)'],
-        [0.25, 'rgb(244,109,67)'],
-        [0.50, 'rgb(253,174,97)'],
-        [1, 'rgb(26,152,80)']
+        [0, 'rgb(165,0,38)'],
+        [0.25, 'rgb(215,48,39)'],
+        [0.5, 'rgb(244,109,67)'],
+        [1, 'rgb(253,174,97)'],
+        [1.5, 'rgb(26,152,80)']
     ]
 
     # Create the scatter plot
