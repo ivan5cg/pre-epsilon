@@ -1150,9 +1150,9 @@ with col5:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=365)
 with col1:
-    start_date = st.date_input('Start Date', value=datetime.now() - timedelta(days=180))
+    start_date = st.date_input('Start Date', value=datetime.now() - timedelta(days=180),format="DD-MM-YYYY")
 with col2:
-    end_date = st.date_input('End Date', value=datetime.now())
+    end_date = st.date_input('End Date', value=datetime.now(),format="DD-MM-YYYY")
 
 # Convert date inputs to datetime
 start_date = datetime.combine(start_date, datetime.min.time())
