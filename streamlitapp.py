@@ -1137,31 +1137,34 @@ def create_performance_plot(rendimientos, start_date, end_date):
 
 
 col1, col2, col3, col4, col5 = st.columns(5)
-with col3:
-    if st.button('Last 3 Months'):
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=90)
-with col4:
-    if st.button('Last 6 Months'):
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=180)
-with col5:
-    if st.button('Last 1 Year'):
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=365)
-with col1:
-    start_date = st.date_input('Start Date', value=datetime.now() - timedelta(days=180),format="DD-MM-YYYY")
-with col2:
-    end_date = st.date_input('End Date', value=datetime.now(),format="DD-MM-YYYY")
 
-# Convert date inputs to datetime
-start_date = datetime.combine(start_date, datetime.min.time())
-end_date = datetime.combine(end_date, datetime.min.time())
+# Initialize session state for start and end dates if not already set
+if 'start_date' not in st.session_state or 'end_date' not in st.session_state:
+    st.session_state.start_date = datetime.now() - timedelta(days=180)
+    st.session_state.end_date = datetime.now()
+
+def update_dates(days):
+    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = st.session_state.end_date - timedelta(days=days)
+
+with col1:
+    if st.button('Last 3 Months'):
+        update_dates(90)
+with col2:
+    if st.button('Last 6 Months'):
+        update_dates(180)
+with col3:
+    if st.button('Last 1 Year'):
+        update_dates(365)
+with col4:
+    start_date = st.date_input('Start Date', value=st.session_state.start_date)
+    st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+with col5:
+    end_date = st.date_input('End Date', value=st.session_state.end_date)
+    st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
 
 # Create and display the plot
-fig = create_performance_plot(rendimientos, start_date, end_date)
-
-
+fig = create_performance_plot(rendimientos, st.session_state.start_date, st.session_state.end_date)
 st.plotly_chart(fig, use_container_width=True)
 
 
