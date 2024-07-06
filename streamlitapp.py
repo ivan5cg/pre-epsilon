@@ -1149,7 +1149,7 @@ def update_dates(days):
 
 def update_year_to_date():
     st.session_state.end_date = datetime.now()
-    st.session_state.start_date = datetime.datetime(st.session_state.end_date.year, 1, 1)
+    st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
 
 with col1:
     if st.button('Last Month'):
