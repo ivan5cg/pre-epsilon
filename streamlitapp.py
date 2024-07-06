@@ -1050,42 +1050,124 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 
+st.divider()
 
 
+def calculate_volatility(returns):
+    return returns.std() * np.sqrt(252)
+
+def create_performance_plot(rendimientos, start_date, end_date):
+    # Filter data based on selected date range
+    filtered_returns = rendimientos[(rendimientos.index >= start_date) & (rendimientos.index <= end_date)]
+    
+    returns = (1 + filtered_returns).cumprod().iloc[-1] - 1
+    volatility = filtered_returns.apply(calculate_volatility)
+
+    performance_df = pd.DataFrame({'returns': returns, 'volatility': volatility}).reset_index()
+    performance_df.columns = ['Asset', 'Returns', 'Volatility']
+
+    # Calculate the Sharpe Ratio with 3.5% risk-free rate
+    risk_free_rate = 0.035  # 3.5% annual rate
+    performance_df['Sharpe_Ratio'] = (performance_df['Returns'] - risk_free_rate) / performance_df['Volatility']
+
+    # Create a color scale based on Sharpe Ratio
+    color_scale = [
+        [0, 'rgb(165,0,38)'],
+        [0.25, 'rgb(215,48,39)'],
+        [0.5, 'rgb(244,109,67)'],
+        [0.75, 'rgb(253,174,97)'],
+        [1, 'rgb(26,152,80)']
+    ]
+
+    # Create the scatter plot
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=performance_df['Volatility'],
+        y=performance_df['Returns'],
+        mode='markers+text',
+        text=performance_df['Asset'],
+        textposition='top center',
+        marker=dict(
+            size=15,
+            color=performance_df['Sharpe_Ratio'],
+            colorscale=color_scale,
+            colorbar=dict(title='Sharpe Ratio'),
+            showscale=True
+        ),
+        hovertemplate='<b>%{text}</b><br>Returns: %{y:.2%}<br>Volatility: %{x:.2%}<br>Sharpe Ratio: %{marker.color:.2f}<extra></extra>'
+    ))
+
+    # Calculate mean values for quadrant lines
+    mean_volatility = performance_df['Volatility'].mean()
+    mean_returns = performance_df['Returns'].mean()
+
+    # Add colored quadrants
+    fig.add_shape(type="rect", x0=0, y0=mean_returns, x1=mean_volatility, y1=1, 
+                  fillcolor="rgba(0,255,0,0.1)", line=dict(width=0))
+    fig.add_shape(type="rect", x0=mean_volatility, y0=mean_returns, x1=1, y1=1, 
+                  fillcolor="rgba(255,255,0,0.1)", line=dict(width=0))
+    fig.add_shape(type="rect", x0=0, y0=0, x1=mean_volatility, y1=mean_returns, 
+                  fillcolor="rgba(255,0,0,0.1)", line=dict(width=0))
+    fig.add_shape(type="rect", x0=mean_volatility, y0=0, x1=1, y1=mean_returns, 
+                  fillcolor="rgba(0,0,255,0.1)", line=dict(width=0))
+
+    # Update layout
+    fig.update_layout(
+        title={
+            'text': f'Asset Performance: Returns vs Volatility ({start_date.date()} to {end_date.date()})',
+            'y':0.95,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top'
+        },
+        xaxis_title='Volatility (Annualized)',
+        yaxis_title='Returns',
+        height=700,
+        width=1000,
+        xaxis=dict(tickformat='.2%', range=[0, performance_df['Volatility'].max() * 1.1]),
+        yaxis=dict(tickformat='.2%', range=[performance_df['Returns'].min() * 1.1, performance_df['Returns'].max() * 1.1]),
+        shapes=[
+            dict(type="line", x0=mean_volatility, y0=0, x1=mean_volatility, y1=1, xref="x", yref="paper", line=dict(color="Grey", width=1, dash="dash")),
+            dict(type="line", x0=0, y0=mean_returns, x1=1, y1=mean_returns, xref="paper", yref="y", line=dict(color="Grey", width=1, dash="dash"))
+        ]
+    )
+
+    return fig
 
 
+col1, col2, col3, col4, col5 = st.columns(5)
+with col1:
+    if st.button('Last 3 Months'):
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=90)
+with col2:
+    if st.button('Last 6 Months'):
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=180)
+with col3:
+    if st.button('Last 1 Year'):
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=365)
+with col4:
+    start_date = st.date_input('Start Date', value=datetime.now() - timedelta(days=180))
+with col5:
+    end_date = st.date_input('End Date', value=datetime.now())
+
+# Convert date inputs to datetime
+start_date = datetime.combine(start_date, datetime.min.time())
+end_date = datetime.combine(end_date, datetime.min.time())
+
+# Create and display the plot
+fig = create_performance_plot(rendimientos, start_date, end_date)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+st.plotly_chart(fig, use_container_width=True)
 
 
 
 
 st.divider()
-
-
-
-
-
-
-
-
 
 valor_df = pd.DataFrame(valor.iloc[-1])
 valor_df.columns = ["Hoy"]
