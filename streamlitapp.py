@@ -1148,14 +1148,14 @@ def update_dates(days):
     st.session_state.start_date = st.session_state.end_date - timedelta(days=days)
 
 with col1:
+    if st.button('Last Month',"test"):
+        update_dates(30)
+with col2:
     if st.button('Last 3 Months'):
         update_dates(90)
-with col2:
+with col3:
     if st.button('Last 6 Months'):
         update_dates(180)
-with col3:
-    if st.button('Last 1 Year'):
-        update_dates(365)
 with col4:
     start_date = st.date_input('Start Date', value=st.session_state.start_date)
     st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
