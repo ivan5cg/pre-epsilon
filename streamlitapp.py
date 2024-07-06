@@ -1147,8 +1147,12 @@ def update_dates(days):
     st.session_state.end_date = datetime.now()
     st.session_state.start_date = st.session_state.end_date - timedelta(days=days)
 
+def update_year_to_date():
+    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = datetime.datetime(st.session_state.end_date.year, 1, 1)
+
 with col1:
-    if st.button('Last Month',"test"):
+    if st.button('Last Month'):
         update_dates(30)
 with col2:
     if st.button('Last 3 Months'):
@@ -1157,15 +1161,19 @@ with col3:
     if st.button('Last 6 Months'):
         update_dates(180)
 with col4:
-    start_date = st.date_input('Start Date', value=st.session_state.start_date,format="DD-MM-YYYY")
-    st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+    if st.button('Year to Date'):
+        update_year_to_date()
 with col5:
-    end_date = st.date_input('End Date', value=st.session_state.end_date,format="DD-MM-YYYY")
+    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
+    st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+with col6:
+    end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY")
     st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
 
 # Create and display the plot
 fig = create_performance_plot(rendimientos, st.session_state.start_date, st.session_state.end_date)
 st.plotly_chart(fig, use_container_width=True)
+
 
 
 
