@@ -176,9 +176,9 @@ def process_portfolio_data(opcion_seleccionada):
     movimientos.replace(column_mapping, inplace=True)
     movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index]).cumsum()
 
-    return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor
+    return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor,benchmark,rendimiento_portfolio
 
-rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor = process_portfolio_data(opcion_seleccionada)
+rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor,benchmark,rendimiento_portfolio = process_portfolio_data(opcion_seleccionada)
 
 
 
