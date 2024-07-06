@@ -1071,17 +1071,24 @@ def create_performance_plot(rendimientos, start_date, end_date):
     performance_df['Sharpe_Ratio'] = (performance_df['Returns'] - risk_free_rate) / performance_df['Volatility']
 
     # Create a color scale based on Sharpe Ratio
+     # Create a color scale based on Sharpe Ratio
     color_scale = [
-            [-2, 'rgb(165,0,38)'],    # Dark red for very negative Sharpe Ratio
-            [-1, 'rgb(215,48,39)'],   # Red for negative Sharpe Ratio
-            [-0.5, 'rgb(244,109,67)'],# Orange for slightly negative Sharpe Ratio
-            [0, 'rgb(253,174,97)'],   # Light orange for zero Sharpe Ratio
-            [0.5, 'rgb(254,224,144)'],# Yellow for low positive Sharpe Ratio
-            [1, 'rgb(224,243,248)'],  # Light blue for moderate Sharpe Ratio
-            [1.5, 'rgb(171,217,233)'],# Blue for good Sharpe Ratio
-            [2, 'rgb(116,173,209)'],  # Dark blue for very good Sharpe Ratio
-            [3, 'rgb(69,117,180)'],   # Very dark blue for excellent Sharpe Ratio
-        ]
+        [0, 'rgb(165,0,38)'],     # Dark red for very negative Sharpe Ratio
+        [0.2, 'rgb(215,48,39)'],  # Red for negative Sharpe Ratio
+        [0.4, 'rgb(244,109,67)'], # Orange for slightly negative Sharpe Ratio
+        [0.5, 'rgb(253,174,97)'], # Light orange for zero Sharpe Ratio
+        [0.6, 'rgb(255,255,191)'],# Yellow for low positive Sharpe Ratio
+        [0.7, 'rgb(166,217,106)'],# Light green for moderate Sharpe Ratio
+        [0.8, 'rgb(102,189,99)'], # Green for good Sharpe Ratio
+        [0.9, 'rgb(26,152,80)'],  # Dark green for very good Sharpe Ratio
+        [1, 'rgb(0,104,55)']      # Very dark green for excellent Sharpe Ratio
+    ]
+
+ # Calculate min and max Sharpe Ratio for color scaling
+    min_sharpe = min(performance_df['Sharpe_Ratio'].min(), -2)  # Use -2 as minimum if no lower values
+    max_sharpe = max(performance_df['Sharpe_Ratio'].max(), 3)   # Use 3 as maximum if no higher values
+
+
     # Create the scatter plot
     fig = go.Figure()
 
@@ -1095,30 +1102,37 @@ def create_performance_plot(rendimientos, start_date, end_date):
             size=15,
             color=performance_df['Sharpe_Ratio'],
             colorscale=color_scale,
-            colorbar=dict(title='Sharpe Ratio'),
+            colorbar=dict(
+                title='Sharpe Ratio',
+                tickmode='array',
+                tickvals=[min_sharpe, (min_sharpe + max_sharpe) / 2, max_sharpe],
+                ticktext=[f'{min_sharpe:.1f}', '0', f'{max_sharpe:.1f}+']
+            ),
+            cmin=min_sharpe,
+            cmax=max_sharpe,
             showscale=True
         ),
         hovertemplate='<b>%{text}</b><br>Returns: %{y:.2%}<br>Volatility: %{x:.2%}<br>Sharpe Ratio: %{marker.color:.2f}<extra></extra>'
     ))
 
     # Calculate mean values for quadrant lines
-    mean_volatility = performance_df['Volatility'].mean()
-    mean_returns = performance_df['Returns'].mean()
+    mean_volatility = 0.15
+    mean_returns = 0
 
     # Add colored quadrants
     fig.add_shape(type="rect", x0=0, y0=mean_returns, x1=mean_volatility, y1=1, 
-                  fillcolor="rgba(0,255,0,0.1)", line=dict(width=0))
+                fillcolor="rgba(0,255,0,0.9)", line=dict(width=0))
     fig.add_shape(type="rect", x0=mean_volatility, y0=mean_returns, x1=1, y1=1, 
-                  fillcolor="rgba(255,255,0,0.1)", line=dict(width=0))
+                fillcolor="rgba(255,255,0,0.9)", line=dict(width=0))
     fig.add_shape(type="rect", x0=0, y0=0, x1=mean_volatility, y1=mean_returns, 
-                  fillcolor="rgba(255,0,0,0.1)", line=dict(width=0))
+                fillcolor="rgba(255,0,0,0.9)", line=dict(width=0))
     fig.add_shape(type="rect", x0=mean_volatility, y0=0, x1=1, y1=mean_returns, 
-                  fillcolor="rgba(0,0,255,0.1)", line=dict(width=0))
+                fillcolor="rgba(0,0,255,0.9)", line=dict(width=0))
 
     # Update layout
     fig.update_layout(
         title={
-            'text': f'Asset Performance: Returns vs Volatility from{start_date.date()} to {end_date.date()}',
+            'text': f'Asset Performance: Returns vs Volatility ({start_date.date()} to {end_date.date()})',
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
@@ -1132,11 +1146,13 @@ def create_performance_plot(rendimientos, start_date, end_date):
         yaxis=dict(tickformat='.2%', range=[performance_df['Returns'].min() * 1.1, performance_df['Returns'].max() * 1.1]),
         shapes=[
             dict(type="line", x0=mean_volatility, y0=0, x1=mean_volatility, y1=1, xref="x", yref="paper", line=dict(color="Grey", width=1, dash="dash")),
-            dict(type="line", x0=0, y0=mean_returns, x1=1, y1=mean_returns, xref="paper", yref="y", line=dict(color="Grey", width=1, dash="dash"))
+            dict(type="line", x0=0, y0=0, x1=1, y1=0, xref="paper", yref="y", line=dict(color="Grey", width=1, dash="dash"))
         ]
     )
 
     return fig
+
+
 
 
 col1, col2, col3, col4, col5,col6 = st.columns(6)
