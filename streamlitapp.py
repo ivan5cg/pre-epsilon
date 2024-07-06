@@ -1153,7 +1153,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
     return fig
 
 
-
+st.subheader("Returns vs. Volatility")
 
 col1, col2, col3, col4, col5,col6 = st.columns(6)
 
