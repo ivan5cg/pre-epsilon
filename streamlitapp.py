@@ -927,7 +927,6 @@ st.plotly_chart(fig,use_container_width=True)
 st.divider()
 
 
-
 col1,col2 = st.columns(2)
 
 compare_irr = pd.concat([xirr_portfolio,xirr_benchmark],axis=1)
@@ -954,8 +953,6 @@ with col1:
             hovermode='x'
         )
 
-
-
         #st.plotly_chart(fig,use_container_width=True)
 
     elif irr_opcion == "Delta":
@@ -967,12 +964,6 @@ with col1:
         # Customize the plot colors
         fig.data[0].update(mode='lines', line=dict(width=0), fill='tozeroy', fillcolor='rgba(0, 255, 0, 0.5)')
         fig.data[1].update(mode='lines', line=dict(width=0), fill='tozeroy', fillcolor='rgba(255, 0, 0, 0.5)')
-
-
-        
-
-
-
 
 
     else:
