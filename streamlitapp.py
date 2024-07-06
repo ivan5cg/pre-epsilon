@@ -18,6 +18,7 @@ warnings.filterwarnings(action='ignore')
 import plotly.express as px
 import plotly.graph_objects as go
 import quantstats as qs
+from matplotlib import colors
 
 is_dark_mode = st.get_option("theme.base") == "dark"
 
@@ -31,9 +32,6 @@ def color_negativo_positivo_cero(val):
     elif val == 0:
         color = '#9E9E9E'  # Gris para valores iguales a cero
     return 'color: %s' % color
-
-
-from matplotlib import colors
 
 def style_performance(val, is_dark_mode=False):
     light_palette = {
@@ -89,13 +87,14 @@ st.sidebar.title("Dashboard")
 st.sidebar.subheader((datetime.utcnow() + timedelta(hours=2)).strftime('%A, %d %B %Y %H:%M'))
 
 
-
 # Lista de opciones para el dropdown
 opciones = ["Omite monetarios","Incluye monetarios" ]
 
 # Crear el dropdown
 opcion_seleccionada = st.selectbox("Selecciona una opción", opciones)
 
+
+## Procesamos toda la información que vamos a necesitar
 
 @st.cache_data
 def process_portfolio_data(opcion_seleccionada):
@@ -186,9 +185,9 @@ def process_portfolio_data(opcion_seleccionada):
 
 rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor,benchmark,rendimiento_portfolio,precios = process_portfolio_data(opcion_seleccionada)
 
-
-
 ##################################
+
+# calculamos el IRR del portfolio
 
 results = []
 
@@ -216,6 +215,8 @@ xirr_portfolio = xirr_portfolio * 100
 
 
 #################################
+
+# calculamos el IRR del benchmark
 
 results = []
 
@@ -250,6 +251,8 @@ xirr_benchmark = xirr_benchmark * 100
 
 
 #################################
+
+### primeros indicadores
 
 col1, col2, col3, col4, col5,col6,col7 = st.columns(7)
 
@@ -348,9 +351,9 @@ with col7:
 
 
 
-
-
 st.divider()
+
+######## tabla resumen
 
 st.subheader("Resumen")
 
@@ -361,41 +364,44 @@ xirr_df = pd.DataFrame(index=valor.index,columns=movimientos["Description"].uniq
 
 
 @st.cache_data(ttl=360)
-def compute_historic_irr(valor,movimientos):
+def compute_historic_irr(valor, movimientos):
+    assets = movimientos["Description"].unique()
+    dates = valor.index
+    xirr_df = pd.DataFrame(index=dates, columns=assets)
 
-    valor = valor
-    movimientos = movimientos
+    # Precompute asset flows and dates
+    asset_flows = {asset: movimientos[movimientos["Description"] == asset]["Flow"] for asset in assets}
+    asset_dates = {asset: flows.index.date for asset, flows in asset_flows.items()}
 
-    xirr_df = pd.DataFrame(index=valor.index,columns=movimientos["Description"].unique())
-
-
-    for asset in movimientos["Description"].unique():
+    for asset in assets:
+        flows = asset_flows[asset]
+        flow_dates = asset_dates[asset]
+        asset_values = valor[asset]
 
         results = []
-
-        for i in valor.index:
-
-            date_i = i 
-
-            flows = pd.DataFrame(movimientos[movimientos["Description"]==asset]["Flow"]).loc[:date_i,:].values  
-            value_today = valor[asset].loc[date_i]
-            flows_xirr = np.append(flows,value_today)
-
-            flows_dates = pd.DataFrame(movimientos[movimientos["Description"]==asset]["Flow"])["Flow"].loc[:date_i].index
-            value_today_date = valor[asset].index[-1]
-            dates_xirr = np.append(flows_dates.date,valor[asset].index[-1].date())
+        for date in dates:
+            date_i = date.date()
             
+            # Use boolean indexing for faster selection
+            mask = flow_dates <= date_i
+            current_flows = flows[mask].values
+            current_dates = flow_dates[mask]
+
+            value_today = asset_values[date]
+            
+            flows_xirr = np.append(current_flows, value_today)
+            dates_xirr = np.append(current_dates, date_i)
+
             try:
-                result = xirr(dates_xirr,flows_xirr,guess=1)
-            except Exception as e:
-                result = 0
+                result = xirr(dates_xirr, flows_xirr, guess=0.1)
+            except Exception:
+                result = np.nan
+
             results.append(result)
 
-            xirr_df.loc[date_i,asset] = result
+        xirr_df[asset] = results
 
-    xirr_df = xirr_df[valor.columns]
-
-    return xirr_df
+    return xirr_df[valor.columns]
 
 
 xirr_df = compute_historic_irr(valor,movimientos)
