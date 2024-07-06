@@ -96,149 +96,91 @@ opciones = ["Omite monetarios","Incluye monetarios" ]
 # Crear el dropdown
 opcion_seleccionada = st.selectbox("Selecciona una opción", opciones)
 
-# Mostrar la opción seleccionada
-#st.write("Seleccionaste:", opcion_seleccionada)
 
+@st.cache_data
+def process_portfolio_data(opcion_seleccionada):
+    # Load and preprocess data
+    movimientos = pd.read_excel("records.xlsx", parse_dates=True)
+    movimientos = movimientos.set_index("Fecha")
+
+    if opcion_seleccionada == "Omite monetarios":
+        movimientos = movimientos[(movimientos["Description"] != "ETF monetario") & (movimientos["Description"] != "Fondo monetario")]
+        fecha_inicio = "2023-09-01"
+    else:
+        fecha_inicio = "2023-01-01"
+
+    fecha_hoy = datetime.now()
+    fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
+
+    rango_fechas = pd.date_range(fecha_inicio, end=fecha_formateada, freq="D")
+    rango_fechas = rango_fechas[rango_fechas.dayofweek < 5]
+
+    # Download prices
+    precios = pd.DataFrame(index=rango_fechas)
+    for i in movimientos["Yahoo Ticker"].dropna().unique():
+        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Adj Close"]
+
+    eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+
+    precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002401
+    for ticker in ["JOE", "BN", "BAM"]:
+        precios[ticker] = precios[ticker] / eurusd
+
+    precios = precios.fillna(method="ffill")
+
+    # Rename columns
+    column_mapping = {
+        'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio',
+        'ZPRV.DE': '1.3 USA Small Value', '0P0001AINF.F': '1.1 World', '0P0001AINL.F': '1.4 Emergentes',
+        'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla',
+        'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
+    }
+    precios.rename(columns=column_mapping, inplace=True)
+    precios = precios.sort_index(axis=1)
+
+    # Calculate returns
+    rendimientos = precios.pct_change()
+
+    # Download and calculate benchmark returns
+    benchmark = yf.download("IWDA.AS", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+    rendimiento_benchmark = benchmark.pct_change().fillna(0)
+
+    # Calculate positions
+    posiciones = pd.DataFrame(index=rango_fechas, columns=movimientos["Description"].unique())
+    for i in movimientos["Description"].unique():
+        posiciones[i] = movimientos[movimientos["Description"] == i].cumsum()["Flow unidades"]
+    posiciones = posiciones.fillna(method="ffill").fillna(0)
+    posiciones.rename(columns=column_mapping, inplace=True)
+    posiciones = posiciones.sort_index(axis=1)
+
+    # Calculate cost
+    coste = pd.DataFrame(index=rango_fechas, columns=movimientos["Description"].unique())
+    for i in movimientos["Description"].unique():
+        coste[i] = movimientos[movimientos["Description"] == i].cumsum()["Flow"]
+    coste = coste.fillna(method="ffill").fillna(0)
+    coste.rename(columns=column_mapping, inplace=True)
+    coste = coste[posiciones.columns]
+
+    # Calculate value and weights
+    valor = precios * posiciones
+    pesos = valor.divide(valor.sum(axis=1), axis=0)
+
+    # Calculate contribution and portfolio return
+    contribucion = pesos.shift() * rendimientos
+    rendimiento_portfolio = contribucion.sum(axis=1)
+
+    # Calculate P&L
+    pl = valor.add(coste)
+
+    # Update movimientos
+    movimientos.replace(column_mapping, inplace=True)
+    movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index]).cumsum()
+
+    return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor
+
+rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor = process_portfolio_data(opcion_seleccionada)
 
-######### cargar registros
 
-movimientos = pd.read_excel("records.xlsx",parse_dates=True)
-
-movimientos = movimientos.set_index("Fecha")
-
-opcion_seleccionada = opcion_seleccionada
-
-if opcion_seleccionada == "Omite monetarios":
-
-    movimientos = movimientos[(movimientos["Description"] != "ETF monetario") & (movimientos["Description"] != "Fondo monetario")]
-
-else:
-    pass
-
-
-if opcion_seleccionada == "Omite monetarios":
-
-    fecha_inicio  = "2023-09-01"
-
-else:
-    fecha_inicio  = "2023-01-01"
-
-
-
-
-from datetime import datetime as dtime
-fecha_hoy = dtime.now()
-
-fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
-
-################
-
-rango_fechas = pd.date_range(fecha_inicio,end=fecha_formateada,freq="D")
-rango_fechas = rango_fechas[rango_fechas.dayofweek < 5]
-
-############### descargar precios
-
-precios = pd.DataFrame(index=rango_fechas)
-
-for i in movimientos["Yahoo Ticker"].dropna().unique():
-    precios[i] = yf.download(i,start=fecha_inicio,progress=False)["Adj Close"]
-
-
-eurusd = yf.download("EURUSD=X",start=fecha_inicio,progress=False).resample("B").ffill()["Adj Close"]
-
-
-precios["WBIT"] = yf.download("BTC-USD",start=fecha_inicio,progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002401
-
-precios["JOE"] = precios["JOE"] / eurusd
-precios["BN"] = precios["BN"] / eurusd
-precios["BAM"] = precios["BAM"] / eurusd
-
-
-
-precios = precios.fillna(method="ffill")
-
-precios.rename(columns={'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio', 'ZPRV.DE': '1.3 USA Small Value', '0P0001AINF.F': '1.1 World',
-                        '0P0001AINL.F': '1.4 Emergentes', 'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla', 'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
-                        }, inplace=True)
-
-precios = precios.sort_index(axis=1)
-
-
-rendimientos = precios.pct_change()
-
-
-
-benchmark = yf.download("IWDA.AS",start=fecha_inicio,progress=False).resample("B").ffill()["Adj Close"]
-rendimiento_benchmark = benchmark.pct_change().fillna(0)
-
-################ calcular posiciones
-
-
-posiciones = pd.DataFrame(index=rango_fechas,columns=movimientos["Description"].unique())
-
-for i in movimientos["Description"].unique():
-
-    posiciones[i] =  movimientos[movimientos["Description"]==i].cumsum()["Flow unidades"]
-
-posiciones = posiciones.fillna(method="ffill").fillna(0)
-
-posiciones.rename(columns={'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
-                        'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
-                        'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
-                        }, inplace=True)
-
-
-posiciones = posiciones.sort_index(axis=1)
-
-
-###### coste
-
-
-coste = pd.DataFrame(index=rango_fechas,columns=movimientos["Description"].unique())
-
-for i in movimientos["Description"].unique():
-
-    coste[i] =  movimientos[movimientos["Description"]==i].cumsum()["Flow"]
-
-coste = coste.fillna(method="ffill").fillna(0)
-
-posiciones.rename(columns={'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
-                        'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
-                        'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
-                        }, inplace=True)
-
-movimientos.replace({'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
-                        'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
-                        'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
-                        },inplace=True)
-
-coste.rename(columns={'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
-                        'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
-                        'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
-                        }, inplace=True)
-
-coste = coste[posiciones.columns]
-
-########## valor 
-
-valor = precios * posiciones
-
-pesos = valor.divide(valor.sum(axis=1),axis=0)
-
-contribucion = pesos.shift() * rendimientos
-
-rendimiento_portfolio = contribucion.sum(axis=1)
-
-pl = valor.add(coste)
-
-
-movimientos["Ud sim benchmark"] = np.nan
-
-for i in range(0,len(movimientos)):
-
-    movimientos.iloc[i, movimientos.columns.get_loc("Ud sim benchmark")] = (-movimientos.iloc[i]["Flow"] / benchmark.loc[movimientos.iloc[i].name]) 
-
-movimientos["Ud sim benchmark"] = movimientos["Ud sim benchmark"].cumsum()
 
 ##################################
 
