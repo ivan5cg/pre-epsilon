@@ -1157,10 +1157,10 @@ with col3:
     if st.button('Last 6 Months'):
         update_dates(180)
 with col4:
-    start_date = st.date_input('Start Date', value=st.session_state.start_date)
+    start_date = st.date_input('Start Date', value=st.session_state.start_date,format="DD-MM-YYYY")
     st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 with col5:
-    end_date = st.date_input('End Date', value=st.session_state.end_date)
+    end_date = st.date_input('End Date', value=st.session_state.end_date,format="DD-MM-YYYY")
     st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
 
 # Create and display the plot
