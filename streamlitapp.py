@@ -1132,7 +1132,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
     # Update layout
     fig.update_layout(
         title={
-            'text': f'Asset Performance: Returns vs Volatility from {start_date.date()} to {end_date.date()})',
+            'text': f'Asset Performance: Returns vs Volatility from {start_date.date()} to {end_date.date()}',
             'y':0.95,
             'x':0.5,
             'xanchor': 'center',
