@@ -1,0 +1,17 @@
+sympy
+pandas==2.0.3
+numpy==1.25.1
+streamlit
+investpy
+matplotlib
+datetime
+matplotlib
+investpy
+yfinance
+pandas_datareader
+ipython
+openpyxl
+mplfinance
+plotly
+quantstats
+pyxirr
