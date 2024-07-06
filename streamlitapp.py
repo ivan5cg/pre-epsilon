@@ -1072,13 +1072,16 @@ def create_performance_plot(rendimientos, start_date, end_date):
 
     # Create a color scale based on Sharpe Ratio
     color_scale = [
-        [0, 'rgb(165,0,38)'],
-        [0.25, 'rgb(215,48,39)'],
-        [0.5, 'rgb(244,109,67)'],
-        [0.75, 'rgb(253,174,97)'],
-        [1, 'rgb(26,152,80)']
-    ]
-
+            [-2, 'rgb(165,0,38)'],    # Dark red for very negative Sharpe Ratio
+            [-1, 'rgb(215,48,39)'],   # Red for negative Sharpe Ratio
+            [-0.5, 'rgb(244,109,67)'],# Orange for slightly negative Sharpe Ratio
+            [0, 'rgb(253,174,97)'],   # Light orange for zero Sharpe Ratio
+            [0.5, 'rgb(254,224,144)'],# Yellow for low positive Sharpe Ratio
+            [1, 'rgb(224,243,248)'],  # Light blue for moderate Sharpe Ratio
+            [1.5, 'rgb(171,217,233)'],# Blue for good Sharpe Ratio
+            [2, 'rgb(116,173,209)'],  # Dark blue for very good Sharpe Ratio
+            [3, 'rgb(69,117,180)'],   # Very dark blue for excellent Sharpe Ratio
+        ]
     # Create the scatter plot
     fig = go.Figure()
 
