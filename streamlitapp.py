@@ -1137,21 +1137,21 @@ def create_performance_plot(rendimientos, start_date, end_date):
 
 
 col1, col2, col3, col4, col5 = st.columns(5)
-with col1:
+with col3:
     if st.button('Last 3 Months'):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=90)
-with col2:
+with col4:
     if st.button('Last 6 Months'):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=180)
-with col3:
+with col5:
     if st.button('Last 1 Year'):
         end_date = datetime.now()
         start_date = end_date - timedelta(days=365)
-with col4:
+with col1:
     start_date = st.date_input('Start Date', value=datetime.now() - timedelta(days=180))
-with col5:
+with col2:
     end_date = st.date_input('End Date', value=datetime.now())
 
 # Convert date inputs to datetime
@@ -1168,6 +1168,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 
 st.divider()
+
 
 valor_df = pd.DataFrame(valor.iloc[-1])
 valor_df.columns = ["Hoy"]
