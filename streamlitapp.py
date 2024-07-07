@@ -433,7 +433,41 @@ st.write(tabla_resumen)
 
 st.divider()
 
-col1, col2 = st.columns(2)
+col1, col2,col3,col4,col5,col6 = st.columns(6)
+
+
+# Initialize session state for start and end dates if not already set
+if 'start_date' not in st.session_state or 'end_date' not in st.session_state:
+    st.session_state.start_date = datetime.now() - timedelta(days=180)
+    st.session_state.end_date = datetime.now()
+
+def update_dates(days):
+    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = st.session_state.end_date - timedelta(days=days)
+
+def update_year_to_date():
+    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
+
+with col1:
+    if st.button('Last Month'):
+        update_dates(30)
+with col2:
+    if st.button('Last 3 Months'):
+        update_dates(90)
+with col3:
+    if st.button('Last 6 Months'):
+        update_dates(180)
+with col4:
+    if st.button('Year to Date'):
+        update_year_to_date()
+with col5:
+    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
+    st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+with col6:
+    end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY")
+    st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
+
 
 
 if opcion_seleccionada == "Omite monetarios":
