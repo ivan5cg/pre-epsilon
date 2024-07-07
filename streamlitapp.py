@@ -461,25 +461,27 @@ with col3:
 with col4:
     if st.button('Year to Date'):
         update_year_to_date()
-with col5:
-    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
-    st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
-with col6:
-    end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY")
-    st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
+#with col5:
+#    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
+ #   st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+#with col6:
+ #   end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY")
+ #   st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
 
 
 
 if opcion_seleccionada == "Omite monetarios":
 
-    with col1:
+    with col5:
 
         start_date  = col1.date_input("Fecha inicio",date(2023,9,1),format="DD-MM-YYYY")
+        st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 
 else:
-    with col1:
+    with col6:
 
         start_date  = col1.date_input("Fecha inicio",date(2023,1,1),format="DD-MM-YYYY")
+        st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
 
 
 
