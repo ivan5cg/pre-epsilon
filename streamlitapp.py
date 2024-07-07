@@ -449,18 +449,7 @@ def update_year_to_date():
     st.session_state.end_date = datetime.now()
     st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
 
-with col1:
-    if st.button('Last Month'):
-        update_dates(30)
-with col2:
-    if st.button('Last 3 Months'):
-        update_dates(90)
-with col3:
-    if st.button('Last 6 Months'):
-        update_dates(180)
-with col4:
-    if st.button('Year to Date'):
-        update_year_to_date()
+
 #with col5:
 #    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
  #   st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
@@ -472,23 +461,35 @@ with col4:
 
 if opcion_seleccionada == "Omite monetarios":
 
-    with col5:
+    with col1:
 
         start_date  = col1.date_input("Fecha inicio",date(2023,9,1),format="DD-MM-YYYY")
         st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 
 else:
-    with col6:
+    with col2:
 
         start_date  = col1.date_input("Fecha inicio",date(2023,1,1),format="DD-MM-YYYY")
         st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 
 
 
-with col2:
-    end_date = st.date_input("Fecha final",date.today(),format="DD-MM-YYYY")
+#with col2:
+#    end_date = st.date_input("Fecha final",date.today(),format="DD-MM-YYYY")
 
 
+with col3:
+    if st.button('Last Month'):
+        update_dates(30)
+with col4:
+    if st.button('Last 3 Months'):
+        update_dates(90)
+with col5:
+    if st.button('Last 6 Months'):
+        update_dates(180)
+with col6:
+    if st.button('Year to Date'):
+        update_year_to_date()
 
 
 
