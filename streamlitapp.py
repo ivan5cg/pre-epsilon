@@ -481,7 +481,7 @@ else:
     with col6:
 
         start_date  = col1.date_input("Fecha inicio",date(2023,1,1),format="DD-MM-YYYY")
-        st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
+        st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 
 
 
