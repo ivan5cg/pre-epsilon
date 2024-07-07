@@ -480,9 +480,12 @@ with col2:
 
 with col3:
     st.text(" ")
+    st.text(" ")
+    st.text(" ")
     if st.button('Last Month'):
         update_dates(30)
 with col4:
+    st.text(" ")
     st.text(" ")
     if st.button('Last 3 Months'):
         update_dates(90)
