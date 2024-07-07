@@ -496,7 +496,7 @@ with col6:
 vsBench = pd.DataFrame(rendimiento_portfolio,columns=["Portfolio"])
 vsBench["Benchmark"] = benchmark.pct_change()
 
-growthline_portfolio = (1+vsBench[start_date:end_date]).cumprod()
+growthline_portfolio = (1+vsBench[st.session_state.start_date:st.session_state.end_date]).cumprod()
 
 
 fig = px.line(growthline_portfolio,title='Evolución índice cartera')
