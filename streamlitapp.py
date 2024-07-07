@@ -1216,15 +1216,23 @@ def update_year_to_date():
     st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
 
 with col1:
+    st.text(" ")
+    st.text(" ")
     if st.button('Last Month'):
         update_dates(30)
 with col2:
+    st.text(" ")
+    st.text(" ")
     if st.button('Last 3 Months'):
         update_dates(90)
 with col3:
+    st.text(" ")
+    st.text(" ")
     if st.button('Last 6 Months'):
         update_dates(180)
 with col4:
+    st.text(" ")
+    st.text(" ")
     if st.button('Year to Date'):
         update_year_to_date()
 with col5:
