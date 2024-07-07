@@ -1236,10 +1236,10 @@ with col4:
     if st.button('Year to Date',key="last 12 month rr"):
         update_year_to_date()
 with col5:
-    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
+    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY",key="start date rr")
     st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 with col6:
-    end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY")
+    end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY",key="end   date rr")
     st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
 
 # Create and display the plot
