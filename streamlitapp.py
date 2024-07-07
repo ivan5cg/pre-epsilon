@@ -1218,22 +1218,22 @@ def update_year_to_date():
 with col1:
     st.text(" ")
     st.text(" ")
-    if st.button('Last Month '):
+    if st.button('Last Month',key="last month rr"):
         update_dates(30)
 with col2:
     st.text(" ")
     st.text(" ")
-    if st.button('Last 3 Months '):
+    if st.button('Last 3 Months',key="last 3 month rr"):
         update_dates(90)
 with col3:
     st.text(" ")
     st.text(" ")
-    if st.button('Last 6 Months '):
+    if st.button('Last 6 Months',key="last 6 month rr"):
         update_dates(180)
 with col4:
     st.text(" ")
     st.text(" ")
-    if st.button('Year to Date '):
+    if st.button('Year to Date',key="last 12 month rr"):
         update_year_to_date()
 with col5:
     start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY")
