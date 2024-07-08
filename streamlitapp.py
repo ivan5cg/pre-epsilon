@@ -924,6 +924,117 @@ st.write(pl_df.style.pipe(lambda x: x.applymap(color_negativo_positivo_cero)).fo
 
 
 
+
+################
+
+
+
+
+
+dim_elegida =  st.selectbox("Gráfico",["Contribución","Returns","P/L"],index=1)
+
+col1, col2, col3, col4, col5,col6 = st.columns(6)
+
+# Initialize session state for start and end dates if not already set
+if 'start_date' not in st.session_state or 'end_date' not in st.session_state:
+    st.session_state.start_date = datetime.now() - timedelta(days=180)
+    st.session_state.end_date = datetime.now()
+
+def update_dates(days):
+    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = st.session_state.end_date - timedelta(days=days)
+
+def update_year_to_date():
+    st.session_state.end_date = datetime.now()
+    st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
+
+with col1:
+    st.text(" ")
+    st.text(" ")
+    if st.button('Last Month',key="last month gr"):
+        update_dates(30)
+with col2:
+    st.text(" ")
+    st.text(" ")
+    if st.button('Last 3 Months',key="last 3 month gr"):
+        update_dates(90)
+with col3:
+    st.text(" ")
+    st.text(" ")
+    if st.button('Last 6 Months',key="last 6 month gr"):
+        update_dates(180)
+with col4:
+    st.text(" ")
+    st.text(" ")
+    if st.button('Year to Date',key="last 12 month gr"):
+        update_year_to_date()
+with col5:
+    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY",key="start date gr")
+    st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+with col6:
+    end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY",key="end   date gr")
+    st.session_state.end_date = datetime.combine(end_date, datetime.min.time())
+
+
+
+if dim_elegida == "Returns":
+
+    returns_comp = precios.loc[st.session_state.start_date:st.session_state.end_date]
+    returns_comp = 100 * returns_comp/returns_comp.iloc[0]
+
+
+    fig = go.Figure()
+    for column in returns_comp.columns:
+        fig.add_trace(go.Scatter(x=returns_comp.index, y=returns_comp[column], name=column))
+
+    fig.update_layout(
+        xaxis_title='Date',
+        yaxis_title='Evolution',
+        legend_title='Assets',
+        hovermode='x unified'
+    )
+
+    st.plotly_chart(fig)
+
+elif dim_elegida=="Contribución":
+
+    returns_comp = contribucion.loc[st.session_state.start_date:st.session_state.end_date]
+    returns_comp = returns_comp = ((1+returns_comp).cumprod() - 1) * 100
+
+    fig = go.Figure()
+    for column in returns_comp.columns:
+        fig.add_trace(go.Scatter(x=returns_comp.index, y=returns_comp[column], name=column))
+
+    fig.update_layout(
+        xaxis_title='Date',
+        yaxis_title='Evolution',
+        legend_title='Assets',
+        hovermode='x unified'
+    )
+
+    st.plotly_chart(fig)
+
+elif dim_elegida=="P/L":
+
+    returns_comp = pl.loc[st.session_state.start_date:st.session_state.end_date]
+
+
+    fig = go.Figure()
+    for column in returns_comp.columns:
+        fig.add_trace(go.Scatter(x=returns_comp.index, y=returns_comp[column], name=column))
+
+    fig.update_layout(
+        xaxis_title='Date',
+        yaxis_title='Evolution',
+        legend_title='Assets',
+        hovermode='x unified'
+    )
+
+    st.plotly_chart(fig)
+
+
+
+
 #####################################################################
 
 
@@ -1236,7 +1347,7 @@ with col4:
     if st.button('Year to Date',key="last 12 month rr"):
         update_year_to_date()
 with col5:
-    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="D   D-MM-YYYY",key="start date rr")
+    start_date = st.date_input('Start Date', value=st.session_state.start_date, format="DD-MM-YYYY",key="start date rr")
     st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
 with col6:
     end_date = st.date_input('End Date', value=st.session_state.end_date, format="DD-MM-YYYY",key="end   date rr")
