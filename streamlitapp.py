@@ -96,7 +96,7 @@ opcion_seleccionada = st.selectbox("Selecciona una opción", opciones)
 
 ## Procesamos toda la información que vamos a necesitar
 
-@st.cache_data
+@st.cache_data(ttl=15*60)
 def process_portfolio_data(opcion_seleccionada):
     # Load and preprocess data
     movimientos = pd.read_excel("records.xlsx", parse_dates=True)
@@ -220,7 +220,7 @@ xirr_portfolio = xirr_portfolio * 100
 
 results = []
 
-valor_benchmark = movimientos["Ud sim benchmark"].groupby(level=0).last().reindex(benchmark.index, method='ffill') * benchmark
+valor_benchmark = movimientos["Ud sim benchmark"].groupby(level=0).last().reindex(precios.index, method='ffill') * benchmark
 
 for i in valor.index:
 
@@ -459,46 +459,44 @@ def update_year_to_date():
 
 
 
-if opcion_seleccionada == "Omite monetarios":
-
-    with col1:
-
-        start_date  = col1.date_input("Fecha inicio",date(2023,9,1),format="DD-MM-YYYY")
-        st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
-
-else:
-    with col1:
-
-        start_date  = col1.date_input("Fecha inicio",date(2023,1,1),format="DD-MM-YYYY")
-        st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
-
-
-
-with col2:
-    st.session_state.end_date = st.date_input("Fecha final",date.today(),format="DD-MM-YYYY")
-
-
-with col3:
+with col1:
     st.text(" ")
     st.text(" ")
     if st.button('Last Month'):
         update_dates(30)
-with col4:
+with col2:
     st.text(" ")
     st.text(" ")
     if st.button('Last 3 Months'):
         update_dates(90)
-with col5:
+with col3:
     st.text(" ")
     st.text(" ")
     if st.button('Last 6 Months'):
         update_dates(180)
-with col6:
+with col4:
     st.text(" ")
     st.text(" ")
     if st.button('Year to Date'):
         update_year_to_date()
 
+if opcion_seleccionada == "Omite monetarios":
+
+    with col5:
+
+        start_date  = col5.date_input("Fecha inicio",value=st.session_state.start_date,format="DD-MM-YYYY")
+        st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+
+else:
+    with col5:
+
+        start_date  = col1.date_input("Fecha inicio",st.session_state.start_date,format="DD-MM-YYYY")
+        st.session_state.start_date = datetime.combine(start_date, datetime.min.time())
+
+
+
+with col6:
+    st.session_state.end_date = st.date_input("Fecha final",st.session_state.end_date,format="DD-MM-YYYY")
 
 
 vsBench = pd.DataFrame(rendimiento_portfolio,columns=["Portfolio"])
@@ -1164,7 +1162,7 @@ def compute_rolling_correlations(df, column='1.1 World', window=30, start_date=N
     result = correlations.xs(column, level=1, axis=0)
     result = result.drop(column, axis=1)
     
-    return result
+    return result.dropna()
 
 
 # Parameters in four columns
@@ -1180,7 +1178,7 @@ with col3:
     reference_column = st.selectbox('Reference Column', rendimientos_corr.columns, index=rendimientos_corr.columns.get_loc('1.1 World'))
 
 with col4:
-    window = st.slider('Rolling Window (days)', min_value=2, max_value=180, value=30)
+    window = st.slider('Rolling Window (days)', min_value=2, max_value=365, value=180)
 
 # Convert dates to string format
 start_date = start_date.strftime('%Y-%m-%d')
