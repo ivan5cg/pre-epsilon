@@ -1574,10 +1574,6 @@ saldo_inicial = valor.sum(axis=1).iloc[-1]
 # Create portfolio DataFrame
 df_cartera = create_portfolio_df(pesos_actuales, expectativas)
 
-# Set simulation parameters (these could be Streamlit inputs)
-num_simulaciones = 15000  # Increased for better statistical significance
-anos_simulacion = 6
-aportacion_mensual = 1250
 
 # Run simulation
 simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
