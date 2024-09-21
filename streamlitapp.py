@@ -1452,14 +1452,14 @@ from plotly.subplots import make_subplots
 from typing import Dict, Tuple
 from datetime import datetime, timedelta, date
 
-# Customization selectors
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=50000, value=15000)
-
-with col2:
     anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
+
+max_simulations = 50000 - (anos_simulacion - 1) * 2500
+num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=max_simulations, value=15000)
 
 with col3:
     aportacion_mensual = st.number_input('Monthly Contribution', min_value=0, step=50, value=1250)
