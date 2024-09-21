@@ -1459,7 +1459,7 @@ with col1:
     anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
 
 max_simulations = 50000 - (anos_simulacion - 1) * 1000
-num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=max_simulations, value=15000)
+num_simulaciones = col2.st.slider('Number of Simulations', min_value=1000, max_value=max_simulations, value=15000)
 
 with col3:
     aportacion_mensual = st.number_input('Monthly Contribution', min_value=0, step=50, value=1250)
