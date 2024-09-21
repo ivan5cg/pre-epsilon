@@ -1465,7 +1465,7 @@ with col2:
     anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
 
 with col3:
-    aportacion_mensual = st.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
+    aportacion_mensual = st.number_input('Monthly Contribution', min_value=0, step=50, value=1250)
 
 
 def load_asset_expectations() -> Dict[str, Dict[str, float]]:
