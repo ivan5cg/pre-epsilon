@@ -1446,11 +1446,25 @@ st.plotly_chart(fig,use_container_width=True)
 
 
 ############################
-import numpy as np
-import pandas as pd
+
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from typing import Dict, Tuple
 from datetime import datetime, timedelta, date
+
+
+
+# Customization selectors
+num_simulaciones = st.sidebar.slider('Number of Simulations', min_value=1000, max_value=50000, value=15000)
+anos_simulacion = st.sidebar.slider('Years', min_value=1, max_value=20, value=6)
+aportacion_mensual = st.sidebar.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
+
+# Run simulation with custom parameters
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, anos_simulacion, aportacion_mensual)
+
+# Plot the results
+st.plotly_chart(plot_simulation_results(simulaciones, anos_simulacion), use_container_width=True)
+
 
 def load_asset_expectations() -> Dict[str, Dict[str, float]]:
     """Load and return asset expectations."""
@@ -1567,8 +1581,7 @@ anos_simulacion = 6
 aportacion_mensual = 1250
 
 # Run simulation
-simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
-                                            anos_simulacion, aportacion_mensual)
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, anos_simulacion, aportacion_mensual)
 
 
 import numpy as np
