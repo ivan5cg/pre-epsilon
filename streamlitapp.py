@@ -1456,9 +1456,16 @@ from datetime import datetime, timedelta, date
 import streamlit as st
 
 # Customization selectors
-num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=50000, value=15000)
-anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
-aportacion_mensual = st.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=50000, value=15000)
+
+with col2:
+    anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
+
+with col3:
+    aportacion_mensual = st.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
 
 
 def load_asset_expectations() -> Dict[str, Dict[str, float]]:
