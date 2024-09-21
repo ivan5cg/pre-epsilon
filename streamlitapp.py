@@ -510,8 +510,8 @@ growthline_portfolio = growthline_portfolio/growthline_portfolio.iloc[0]
 fig = px.line(growthline_portfolio, title='Evolución índice cartera')
 
 # Update line colors and widths
-fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="orange", width=4))
-fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="blue", width=2))
+fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="#FF8C00", width=4))  # Darker orange
+fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="#4FB0C6", width=2))  # Soft sea blue
 
 tickvals = growthline_portfolio.index[::5]
 ticktext = growthline_portfolio.index[::5].strftime('%d %b %y')
