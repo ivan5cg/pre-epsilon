@@ -1460,8 +1460,6 @@ num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=
 anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
 aportacion_mensual = st.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
 
-# Run simulation with custom parameters
-simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, anos_simulacion, aportacion_mensual)
 
 # Plot the results
 st.plotly_chart(plot_simulation_results(simulaciones, anos_simulacion), use_container_width=True)
