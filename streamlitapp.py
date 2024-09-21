@@ -1452,9 +1452,6 @@ from plotly.subplots import make_subplots
 from typing import Dict, Tuple
 from datetime import datetime, timedelta, date
 
-
-import streamlit as st
-
 # Customization selectors
 col1, col2, col3 = st.columns(3)
 
@@ -1587,11 +1584,6 @@ simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simul
                                             anos_simulacion, aportacion_mensual)
 
 
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from datetime import datetime, timedelta
 
 def plot_simulation_results(simulaciones: np.ndarray, anos_simulacion: int):
     """Plot the simulation results with date formatting and sorted hover values."""
