@@ -1748,9 +1748,10 @@ st.plotly_chart(plot_simulation_results(simulaciones, anos_simulacion), use_cont
 # Calcular IRR para cada simulación usando fechas
 irrs = []
 start_date = datetime.now()
-dias_simulacion = anos_simulacion * 252
+dias_simulacion = anos_simulacion *252
 fechas_simulacion = pd.bdate_range(start=start_date, periods=dias_simulacion).to_pydatetime().tolist()
-fecha_aportes = generate_monthly_indices(anos_simulacion*252, datetime.now())
+fecha_aportes  = generate_monthly_indices(anos_simulacion*252, datetime.now())
+
 
 for i in range(num_simulaciones):
     # Crear los flujos de caja: inicial negativo, aportaciones negativas, y valor final positivo
@@ -1766,65 +1767,31 @@ for i in range(num_simulaciones):
     except ValueError:
         irrs.append(np.nan)  # Manejar casos en los que no se pueda calcular
 
+
+
 # Limpiar NaN de IRR antes del histograma
 irrs = [x for x in irrs if not np.isnan(x)]
 
-# Calcular el histograma
-hist, bin_edges = np.histogram(irrs, bins=50)
-bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
-# Calcular porcentajes y porcentajes acumulados
-total = len(irrs)
-percentages = (hist / total) * 100
-cumulative_percentages = np.cumsum(percentages)
-
-# Crear la figura
 fig_hist = go.Figure()
 
-# Agregar el histograma de porcentajes
-fig_hist.add_trace(go.Bar(
-    x=bin_centers,
-    y=percentages,
-    name='Porcentaje de ocurrencias',
-    marker_color='rgba(46, 204, 113, 0.7)',
+fig_hist.add_trace(go.Histogram(
+    x=irrs, 
+    nbinsx=50,
+    marker_color='rgba(46, 204, 113, 0.7)',  # Color verde claro para modo oscuro
     marker_line=dict(color='rgba(255, 255, 255, 0.5)', width=1)
 ))
 
-# Agregar la línea de porcentaje acumulado en el eje secundario
-fig_hist.add_trace(go.Scatter(
-    x=bin_centers,
-    y=cumulative_percentages,
-    mode='lines',
-    name='Porcentaje acumulado',
-    line=dict(color='rgba(231, 76, 60, 1)', width=2),
-    yaxis='y2'  # Esto asigna la traza al eje y secundario
-))
-
-# Actualizar el diseño
 fig_hist.update_layout(
     title='Distribución de IRR de las Simulaciones',
     xaxis_title='IRR (%)',
-    yaxis_title='Porcentaje de ocurrencias',
-    font=dict(color='white'),
-    height=600,
-    yaxis=dict(
-        tickformat='.1f',
-        range=[0, max(percentages) * 1.1]  # Ajustar el rango del eje primario
-    ),
-    yaxis2=dict(
-        title='Porcentaje acumulado',
-        overlaying='y',
-        side='right',
-        range=[0, 100],
-        tickformat='.1f'
-    ),
-    legend=dict(
-        yanchor="top",
-        y=0.99,
-        xanchor="left",
-        x=0.01
-    )
+    yaxis_title='Frecuencia',
+    #template='plotly_dark',  # Plantilla oscura
+    #plot_bgcolor='#1e1e1e',
+    #paper_bgcolor='#1e1e1e',
+    font=dict(color='white'),height=600
 )
+
 st.plotly_chart(fig_hist, use_container_width=True)
 
 
