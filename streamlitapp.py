@@ -1782,14 +1782,6 @@ fig_hist.add_trace(go.Histogram(
     marker_line=dict(color='rgba(255, 255, 255, 0.5)', width=1)
 ))
 
-# Add density accumulation line
-fig_hist.add_trace(go.Scatter(
-    x=irrs,
-    y=[sum(irrs <= i) / len(irrs) for i in irrs],
-    mode='lines',
-    name='Density Accumulation'
-))
-
 fig_hist.update_layout(
     title='Distribución de IRR de las Simulaciones',
     xaxis_title='IRR (%)',
@@ -1797,11 +1789,10 @@ fig_hist.update_layout(
     #template='plotly_dark',  # Plantilla oscura
     #plot_bgcolor='#1e1e1e',
     #paper_bgcolor='#1e1e1e',
-    font=dict(color='white'), height=600
+    font=dict(color='white'),height=600
 )
 
 st.plotly_chart(fig_hist, use_container_width=True)
-
 
 
 
