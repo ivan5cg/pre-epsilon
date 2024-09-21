@@ -500,14 +500,18 @@ with col6:
     st.session_state.end_date = st.date_input("Fecha final",st.session_state.end_date,format="DD-MM-YYYY")
 
 
-vsBench = pd.DataFrame(rendimiento_portfolio,columns=["Portfolio"])
+vsBench = pd.DataFrame(rendimiento_portfolio, columns=["Portfolio"])
 vsBench["Benchmark"] = benchmark.pct_change()
 
 growthline_portfolio = (1+vsBench[st.session_state.start_date:st.session_state.end_date]).cumprod()
 
 growthline_portfolio = growthline_portfolio/growthline_portfolio.iloc[0]
 
-fig = px.line(growthline_portfolio,title='Evolución índice cartera')
+fig = px.line(growthline_portfolio, title='Evolución índice cartera')
+
+# Update line colors and widths
+fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="orange", width=4))
+fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="blue", width=2))
 
 tickvals = growthline_portfolio.index[::5]
 ticktext = growthline_portfolio.index[::5].strftime('%d %b %y')
@@ -519,7 +523,6 @@ fig.update_xaxes(
 
 for date in tickvals:
     fig.add_vline(x=date, line=dict(color='white', width=0.25))
-
 
 st.plotly_chart(fig,use_container_width=True)
 
