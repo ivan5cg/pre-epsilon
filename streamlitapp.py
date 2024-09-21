@@ -1458,7 +1458,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
 
-max_simulations = 50000 - (anos_simulacion - 1) * 2500
+max_simulations = 50000 - (anos_simulacion - 1) * 1000
 num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=max_simulations, value=15000)
 
 with col3:
