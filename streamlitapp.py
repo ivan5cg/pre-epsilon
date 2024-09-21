@@ -144,8 +144,13 @@ def process_portfolio_data(opcion_seleccionada):
     posiciones = posiciones.rename(columns=column_mapping).sort_index(axis=1)
     coste = coste.rename(columns=column_mapping)[posiciones.columns]
 
-    # Calculate value and weights
+    # After calculating precios and posiciones
+    precios = precios.tz_localize(None)  # Remove timezone information if present
+    posiciones = posiciones.tz_localize(None)  # Remove timezone information if present
+
+    # Now calculate valor
     valor = precios[posiciones.columns] * posiciones
+
     pesos = valor.divide(valor.sum(axis=1), axis=0)
 
     # Calculate contribution and portfolio return
