@@ -1579,15 +1579,23 @@ saldo_inicial = valor.sum(axis=1).iloc[-1]
 # Create portfolio DataFrame
 df_cartera = create_portfolio_df(pesos_actuales, expectativas)
 
+# Run simulation
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
+                                            anos_simulacion, aportacion_mensual)
+
+is_modified = False
+
 if st.button("Modify any value in the portfolio"):
     edited_df = st.data_editor(df_cartera, key='portfolio_data')
 
     if edited_df is not None:
         df_cartera.update(edited_df)
+        is_modified = True
 
-# Run simulation
-simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
-                                            anos_simulacion, aportacion_mensual)
+if is_modified:
+    simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
+                                                anos_simulacion, aportacion_mensual)
+
 
 
 
