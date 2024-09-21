@@ -1116,7 +1116,7 @@ with col1:
         )
 
         fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="#FF8C00", width=4))  # Darker orange
-        fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="#4FB0C6", width=2))  # Soft sea blue
+        fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="#4FB0C6", width=3))  # Soft sea blue
 
 
         #st.plotly_chart(fig,use_container_width=True)
