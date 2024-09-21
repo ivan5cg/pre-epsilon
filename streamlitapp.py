@@ -1790,13 +1790,14 @@ fig_hist.add_trace(go.Bar(
     marker_line=dict(color='rgba(255, 255, 255, 0.5)', width=1)
 ))
 
-# Agregar la línea de porcentaje acumulado
+# Agregar la línea de porcentaje acumulado en el eje secundario
 fig_hist.add_trace(go.Scatter(
     x=bin_centers,
     y=cumulative_percentages,
     mode='lines',
     name='Porcentaje acumulado',
-    line=dict(color='rgba(231, 76, 60, 1)', width=2)
+    line=dict(color='rgba(231, 76, 60, 1)', width=2),
+    yaxis='y2'  # Esto asigna la traza al eje y secundario
 ))
 
 # Actualizar el diseño
@@ -1808,24 +1809,20 @@ fig_hist.update_layout(
     height=600,
     yaxis=dict(
         tickformat='.1f',
-        range=[0, 100]
+        range=[0, max(percentages) * 1.1]  # Ajustar el rango del eje primario
     ),
-    legend=dict(
-        yanchor="top",
-        y=0.99,
-        xanchor="left",
-        x=0.01
-    )
-)
-
-# Agregar un eje y secundario para el porcentaje acumulado
-fig_hist.update_layout(
     yaxis2=dict(
         title='Porcentaje acumulado',
         overlaying='y',
         side='right',
         range=[0, 100],
         tickformat='.1f'
+    ),
+    legend=dict(
+        yanchor="top",
+        y=0.99,
+        xanchor="left",
+        x=0.01
     )
 )
 st.plotly_chart(fig_hist, use_container_width=True)
