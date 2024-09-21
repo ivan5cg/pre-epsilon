@@ -1460,7 +1460,7 @@ with col1:
 
 max_simulations = 30000 - (anos_simulacion - 1) * 2000
 if max_simulations < 0:
-    max_simulations = 500
+    max_simulations = 1000
 
 
 num_simulaciones = col2.slider('Number of Simulations', min_value=0, max_value=max_simulations, value=min(8000, max_simulations))
