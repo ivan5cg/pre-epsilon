@@ -100,67 +100,86 @@ opcion_seleccionada = st.selectbox("Selecciona una opción", opciones)
 @st.cache_data(ttl=15*60)
 def process_portfolio_data(opcion_seleccionada):
     # Load and preprocess data
-    movimientos = pd.read_excel("records.xlsx", parse_dates=["Fecha"]).set_index("Fecha")
-
-    opcion_seleccionada = "Incluye monetarios"
-    fecha_inicio = "2015-01-01" if opcion_seleccionada == "Incluye monetarios" else "2023-09-01"
+    movimientos = pd.read_excel("records.xlsx", parse_dates=True)
+    movimientos = movimientos.set_index("Fecha")
 
     if opcion_seleccionada == "Omite monetarios":
-        movimientos = movimientos[~movimientos["Description"].isin(["ETF monetario", "Fondo monetario"])]
+        movimientos = movimientos[(movimientos["Description"] != "ETF monetario") & (movimientos["Description"] != "Fondo monetario")]
+        fecha_inicio = "2023-09-01"
+    else:
+        fecha_inicio = "2023-01-01"
 
-    fecha_hoy = datetime.now().strftime("%Y-%m-%d")
-    rango_fechas = pd.date_range(fecha_inicio, end=fecha_hoy, freq="B")
+    fecha_hoy = datetime.now()
+    fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
+
+    rango_fechas = pd.date_range(fecha_inicio, end=fecha_formateada, freq="D")
+    rango_fechas = rango_fechas[rango_fechas.dayofweek < 5]
 
     # Download prices
-    tickers = movimientos["Yahoo Ticker"].dropna().unique()
-    precios = yf.download(list(tickers) + ["EURUSD=X", "BTC-USD"], start=fecha_inicio, progress=False)["Adj Close"]
-    precios = precios.reindex(rango_fechas).ffill()
+    precios = pd.DataFrame(index=rango_fechas)
+    for i in movimientos["Yahoo Ticker"].dropna().unique():
+        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Adj Close"]
 
-    eurusd = precios["EURUSD=X"]
-    precios["WBIT"] = precios["BTC-USD"] / eurusd * 0.0002398
-    precios.drop(["EURUSD=X", "BTC-USD"], axis=1, inplace=True)
+    eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
 
+    precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002401
     for ticker in ["JOE", "BN", "BAM"]:
-        precios[ticker] /= eurusd
+        precios[ticker] = precios[ticker] / eurusd
+
+    precios = precios.fillna(method="ffill")
 
     # Rename columns
-    column_mapping = {
+    column_mapping_prices = {
         'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio',
         'ZPRV.DE': '1.3 USA Small Value', '0P0001AINF.F': '1.1 World', '0P0001AINL.F': '1.4 Emergentes',
         'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla',
         'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
     }
-    precios.rename(columns=column_mapping, inplace=True)
-    precios.sort_index(axis=1, inplace=True)
 
+    column_mapping_else = {'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
+    'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
+    'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
+                        }
+
+    precios.rename(columns=column_mapping_prices, inplace=True)
+    precios = precios.sort_index(axis=1)
+
+    # Calculate returns
     rendimientos = precios.pct_change()
 
-    # Download and process benchmark
-    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False)["Adj Close"].reindex(rango_fechas).ffill()
+    # Download and calculate benchmark returns
+    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
     rendimiento_benchmark = benchmark.pct_change().fillna(0)
 
-    # Calculate positions and cost
-    posiciones = movimientos.pivot_table(index=movimientos.index, columns="Description", values="Flow unidades", aggfunc="sum").cumsum()
-    posiciones = posiciones.reindex(rango_fechas).ffill().fillna(0)
+    # Calculate positions
+    posiciones = pd.DataFrame(index=rango_fechas, columns=movimientos["Description"].unique())
+    for i in movimientos["Description"].unique():
+        posiciones[i] = movimientos[movimientos["Description"] == i].cumsum()["Flow unidades"]
+    posiciones = posiciones.fillna(method="ffill").fillna(0)
+    posiciones.rename(columns=column_mapping_else, inplace=True)
+    posiciones = posiciones.sort_index(axis=1)
 
-    coste = movimientos.pivot_table(index=movimientos.index, columns="Description", values="Flow", aggfunc="sum").cumsum()
-    coste = coste.reindex(rango_fechas).ffill().fillna(0)
-
-    # Rename columns for posiciones and coste
-    posiciones.rename(columns=column_mapping, inplace=True)
-    coste.rename(columns=column_mapping, inplace=True)
-
-    posiciones.sort_index(axis=1, inplace=True)
+    # Calculate cost
+    coste = pd.DataFrame(index=rango_fechas, columns=movimientos["Description"].unique())
+    for i in movimientos["Description"].unique():
+        coste[i] = movimientos[movimientos["Description"] == i].cumsum()["Flow"]
+    coste = coste.fillna(method="ffill").fillna(0)
+    coste.rename(columns=column_mapping_else, inplace=True)
     coste = coste[posiciones.columns]
 
-    # Calculate value, weights, contribution, and portfolio return
+    # Calculate value and weights
     valor = precios * posiciones
     pesos = valor.divide(valor.sum(axis=1), axis=0)
+
+    # Calculate contribution and portfolio return
     contribucion = pesos.shift() * rendimientos
     rendimiento_portfolio = contribucion.sum(axis=1)
+
+    # Calculate P&L
     pl = valor.add(coste)
 
-    # Calculate benchmark units
+    # Update movimientos
+    movimientos.replace(column_mapping_else, inplace=True)
     movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index]).cumsum()
 
     return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor,benchmark,rendimiento_portfolio,precios
