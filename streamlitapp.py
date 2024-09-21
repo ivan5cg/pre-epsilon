@@ -1466,7 +1466,7 @@ if max_simulations < 0:
 num_simulaciones = col2.slider('Number of Simulations', min_value=0, max_value=max_simulations, value=min(8000, max_simulations))
 
 with col3:
-    aportacion_mensual = st.number_input('Monthly Contribution', min_value=0, step=50, value=1250)
+    aportacion_mensual = st.number_input('Monthly Contribution', step=50, value=1250)
 
 
 
@@ -1579,23 +1579,15 @@ saldo_inicial = valor.sum(axis=1).iloc[-1]
 # Create portfolio DataFrame
 df_cartera = create_portfolio_df(pesos_actuales, expectativas)
 
-# Run simulation
-simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
-                                            anos_simulacion, aportacion_mensual)
-
-is_modified = False
-
 if st.button("Modify any value in the portfolio"):
     edited_df = st.data_editor(df_cartera, key='portfolio_data')
 
     if edited_df is not None:
         df_cartera.update(edited_df)
-        is_modified = True
 
-if is_modified:
-    simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
-                                                anos_simulacion, aportacion_mensual)
-
+# Run simulation
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
+                                            anos_simulacion, aportacion_mensual)
 
 
 
@@ -1720,7 +1712,7 @@ def plot_simulation_results(simulaciones: np.ndarray, anos_simulacion: int):
             orientation='h',
             marker=dict(color='rgba(100, 149, 237, 0.8)'),
             showlegend=False,
-            nbinsy=50,
+            nbinsy=100,
             hovertemplate='%{y:.0f} €',
         ), row=1, col=2
     )
@@ -1780,26 +1772,28 @@ for i in range(num_simulaciones):
 # Limpiar NaN de IRR antes del histograma
 irrs = [x for x in irrs if not np.isnan(x)]
 
-
+# Crear figura de histograma
 fig_hist = go.Figure()
 
+# Agregar histograma con normalización a porcentajes
 fig_hist.add_trace(go.Histogram(
     x=irrs, 
     nbinsx=50,
+    histnorm='percent',  # Normalizar a porcentaje
     marker_color='rgba(46, 204, 113, 0.7)',  # Color verde claro para modo oscuro
     marker_line=dict(color='rgba(255, 255, 255, 0.5)', width=1)
 ))
 
+# Actualizar diseño del gráfico
 fig_hist.update_layout(
     title='Distribución de IRR de las Simulaciones',
     xaxis_title='IRR (%)',
-    yaxis_title='Frecuencia',
-    #template='plotly_dark',  # Plantilla oscura
-    #plot_bgcolor='#1e1e1e',
-    #paper_bgcolor='#1e1e1e',
-    font=dict(color='white'),height=600
+    yaxis_title='Frecuencia (%)',  # Cambiar el título del eje y a porcentaje
+    font=dict(color='white'),
+    height=600
 )
 
+# Mostrar gráfico
 st.plotly_chart(fig_hist, use_container_width=True)
 
 
