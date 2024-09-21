@@ -102,6 +102,7 @@ opcion_seleccionada = st.selectbox("Selecciona una opción", opciones)
 def process_portfolio_data(opcion_seleccionada):
     # Load and preprocess data
     movimientos = pd.read_excel("records.xlsx", parse_dates=["Fecha"]).set_index("Fecha")
+    movimientos.index = movimientos.index.tz_localize(None)
 
     fecha_inicio = "2023-09-01" if opcion_seleccionada == "Omite monetarios" else "2023-01-01"
     if opcion_seleccionada == "Omite monetarios":
@@ -113,6 +114,7 @@ def process_portfolio_data(opcion_seleccionada):
     # Download prices
     tickers = movimientos["Yahoo Ticker"].dropna().unique().tolist() + ["EURUSD=X", "BTC-USD", "SPYI.DE"]
     precios = yf.download(tickers, start=fecha_inicio, progress=False)["Adj Close"].resample("B").ffill()
+    precios.index = precios.index.tz_localize(None)
 
     eurusd = precios["EURUSD=X"]
     precios["WBIT"] = precios["BTC-USD"] / eurusd * 0.0002401
@@ -144,11 +146,7 @@ def process_portfolio_data(opcion_seleccionada):
     posiciones = posiciones.rename(columns=column_mapping).sort_index(axis=1)
     coste = coste.rename(columns=column_mapping)[posiciones.columns]
 
-    # After calculating precios and posiciones
-    precios = precios.tz_localize(None)  # Remove timezone information if present
-    posiciones = posiciones.tz_localize(None)  # Remove timezone information if present
-
-    # Now calculate valor
+    # Calculate valor
     valor = precios[posiciones.columns] * posiciones
 
     pesos = valor.divide(valor.sum(axis=1), axis=0)
@@ -165,6 +163,7 @@ def process_portfolio_data(opcion_seleccionada):
     movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index]).cumsum()
 
     return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl, valor, benchmark, rendimiento_portfolio, precios
+
 
 rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl, valor, benchmark, rendimiento_portfolio, precios = process_portfolio_data(opcion_seleccionada)
 
