@@ -1453,11 +1453,12 @@ from typing import Dict, Tuple
 from datetime import datetime, timedelta, date
 
 
+import streamlit as st
 
 # Customization selectors
-num_simulaciones = st.sidebar.slider('Number of Simulations', min_value=1000, max_value=50000, value=15000)
-anos_simulacion = st.sidebar.slider('Years', min_value=1, max_value=20, value=6)
-aportacion_mensual = st.sidebar.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
+num_simulaciones = st.slider('Number of Simulations', min_value=1000, max_value=50000, value=15000)
+anos_simulacion = st.slider('Years', min_value=1, max_value=20, value=6)
+aportacion_mensual = st.number_input('Monthly Contribution', min_value=0.0, step=100.0, value=1250.0)
 
 # Run simulation with custom parameters
 simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, anos_simulacion, aportacion_mensual)
@@ -1581,7 +1582,8 @@ anos_simulacion = 6
 aportacion_mensual = 1250
 
 # Run simulation
-simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, anos_simulacion, aportacion_mensual)
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
+                                            anos_simulacion, aportacion_mensual)
 
 
 import numpy as np
