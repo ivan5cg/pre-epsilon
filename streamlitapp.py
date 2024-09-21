@@ -19,6 +19,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import quantstats as qs
 from matplotlib import colors
+from scipy import stats
 
 is_dark_mode = st.get_option("theme.base") == "dark"
 
@@ -147,7 +148,7 @@ def process_portfolio_data(opcion_seleccionada):
     rendimientos = precios.pct_change()
 
     # Download and calculate benchmark returns
-    benchmark = yf.download("IWDA.AS", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
     rendimiento_benchmark = benchmark.pct_change().fillna(0)
 
     # Calculate positions
@@ -504,6 +505,7 @@ vsBench["Benchmark"] = benchmark.pct_change()
 
 growthline_portfolio = (1+vsBench[st.session_state.start_date:st.session_state.end_date]).cumprod()
 
+growthline_portfolio = growthline_portfolio/growthline_portfolio.iloc[0]
 
 fig = px.line(growthline_portfolio,title='Evolución índice cartera')
 
@@ -1014,7 +1016,9 @@ elif dim_elegida=="Contribución":
 
 elif dim_elegida=="P/L":
 
-    returns_comp = pl.loc[st.session_state.start_date:st.session_state.end_date]
+    pl_diff = pl.diff()
+
+    returns_comp = pl_diff.loc[st.session_state.start_date:st.session_state.end_date].cumsum()  #- pl.loc[st.session_state.start_date]
 
 
     fig = go.Figure()
@@ -1029,6 +1033,7 @@ elif dim_elegida=="P/L":
     )
 
     st.plotly_chart(fig)
+
 
 
 
@@ -1126,7 +1131,7 @@ with col1:
 
             asset_irr = st.selectbox("Activo",xirr_df.columns)
 
-            fig = px.line(100 * xirr_df[asset_irr],title='IRR')
+            fig = px.line(100 * xirr_df[asset_irr].loc["2024":],title='IRR')
 
 
             fig.update_layout(
@@ -1221,7 +1226,7 @@ def create_performance_plot(rendimientos, start_date, end_date):
     performance_df.columns = ['Asset', 'Returns', 'Volatility']
 
     # Calculate the Sharpe Ratio with 3.5% risk-free rate
-    risk_free_rate = 0.035  # 3.5% annual rate
+    risk_free_rate = 0.035 * 100  / (end_date-start_date).days # 3.5% annual rate
     performance_df['Sharpe_Ratio'] = (performance_df['Returns'] - risk_free_rate) / performance_df['Volatility']
 
     # Create a color scale based on Sharpe Ratio
@@ -1283,15 +1288,27 @@ def create_performance_plot(rendimientos, start_date, end_date):
     fig.add_shape(type="rect", x0=mean_volatility, y0=0, x1=1, y1=mean_returns, 
                 fillcolor="rgba(0,0,255,0.9)", line=dict(width=0))
 
+    # Calculate trendline
+    slope, intercept = stats.linregress(performance_df['Volatility'], performance_df['Returns']).slope, stats.linregress(performance_df['Volatility'], performance_df['Returns']).intercept
+
+    # Add trendline as a thin black line without label in legend
+    fig.add_trace(go.Scatter(
+        x=performance_df['Volatility'],
+        y=slope * performance_df['Volatility'] + intercept,
+        mode='lines',
+        line=dict(color='white', width=0.5),
+        showlegend=False
+    ))
+
     # Update layout
     fig.update_layout(
         title={
-            'text': f'Asset Performance: Returns vs Volatility from {start_date.date()} to {end_date.date()}',
-            'y':0.95,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top'
-        },
+        'text': f'Asset Performance: Returns vs Volatility from {start_date.date()} to {end_date.date()}<br><br>At 0% volatility, the trendline yields {slope * 0 + intercept:.2%} returns. <br>&nbsp;&nbsp;For every 10% increase in volatility, returns are expected to rise by {(slope*10):.2f}%.',
+        'y':0.95,
+        'x':0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    },
         xaxis_title='Volatility (Annualized)',
         yaxis_title='Returns',
         height=700,
@@ -1421,7 +1438,344 @@ fig.update_layout(title_text="Multiple Pie Charts",
 st.plotly_chart(fig,use_container_width=True)
 
 
+############################
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from typing import Dict, Tuple
+from datetime import datetime, timedelta, date
 
+def load_asset_expectations() -> Dict[str, Dict[str, float]]:
+    """Load and return asset expectations."""
+    return {
+        '0.0 ETF monetario': {'retorno': 0.02, 'volatilidad': 0.005},
+        '0.1 Fondo monetario': {'retorno': 0.02, 'volatilidad': 0.005},
+        '1.1 World': {'retorno': 0.07, 'volatilidad': 0.15},
+        '1.2 Europa Small': {'retorno': 0.085, 'volatilidad': 0.20},
+        '1.3 USA Small Value': {'retorno': 0.085, 'volatilidad': 0.20},
+        '1.4 Emergentes': {'retorno': 0.08, 'volatilidad': 0.25},
+        '1.5 ETF bitcoin': {'retorno': 0.20, 'volatilidad': 0.50},
+        '1.6 Uranio': {'retorno': 0.12, 'volatilidad': 0.45},
+        '2.1 Tesla': {'retorno': 0.15, 'volatilidad': 0.40},
+        '2.2 Brookfield Corp': {'retorno': 0.11, 'volatilidad': 0.22},
+        '2.3 St Joe': {'retorno': 0.09, 'volatilidad': 0.20},
+        '2.4 Brookfield AM': {'retorno': 0.10, 'volatilidad': 0.21},
+    }
+
+def create_portfolio_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[str, float]]) -> pd.DataFrame:
+    """Create and return a DataFrame of the current portfolio with expected returns and volatilities."""
+    df_cartera = pd.DataFrame({'Activo': pesos_actuales.index, 'Peso': pesos_actuales.values})
+    df_cartera['Retorno'] = df_cartera['Activo'].map(lambda x: expectativas.get(x, {}).get('retorno', 0))
+    df_cartera['Volatilidad'] = df_cartera['Activo'].map(lambda x: expectativas.get(x, {}).get('volatilidad', 0))
+    return df_cartera.query('Peso > 0')  # Remove assets with zero weight
+
+def simular_rendimiento_optimizado(df: pd.DataFrame, dias: int, num_simulaciones: int, degrees_of_freedom: int = 5) -> np.ndarray:
+    """Simulate portfolio returns using a t-distribution."""
+    retornos_anuales = df['Retorno'].values
+    volatilidades_anuales = df['Volatilidad'].values
+    pesos = df['Peso'].values
+
+    # Compute portfolio expected return and volatility
+    portfolio_return = np.sum(retornos_anuales * pesos)
+    portfolio_volatility = np.sqrt(np.sum((volatilidades_anuales * pesos) ** 2))
+
+    # Calculate daily parameters
+    daily_return = (portfolio_return - 0.5 * portfolio_volatility ** 2) / 252
+    daily_volatility = portfolio_volatility / np.sqrt(252)
+
+    # Generate random returns for the entire portfolio using t-distribution
+    random_t = stats.t.rvs(df=degrees_of_freedom, size=(num_simulaciones, dias))
+    random_returns = daily_return + daily_volatility * random_t * np.sqrt((degrees_of_freedom - 2) / degrees_of_freedom)
+
+    return np.exp(random_returns) - 1
+
+def generate_monthly_indices(dias: int, start_date: datetime) -> np.ndarray:
+    """Generate indices for the first trading day of each month."""
+    # Create a range of dates including only weekdays
+    dates = pd.bdate_range(start=start_date, periods=dias).to_pydatetime()
+
+    # Find the first trading day of each month
+    first_days = []
+    current_month = dates[0].month
+    for i, d in enumerate(dates):
+        if d.month != current_month:
+            first_days.append(i)
+            current_month = d.month
+
+    return np.array(first_days)
+
+def run_simulation(df_cartera: pd.DataFrame, saldo_inicial: float, num_simulaciones: int, 
+                   anos_simulacion: int, aportacion_mensual: float) -> Tuple[np.ndarray, np.ndarray]:
+    """Run the Monte Carlo simulation and return results."""
+    dias_simulacion = 252 * anos_simulacion
+    rendimientos = simular_rendimiento_optimizado(df_cartera, dias_simulacion, num_simulaciones)
+    
+    # Pre-allocate the simulaciones array
+    simulaciones = np.zeros((num_simulaciones, dias_simulacion))
+    simulaciones[:, 0] = saldo_inicial
+
+    # Generate monthly contribution indices based on the first trading day of each month
+    start_date = datetime.now()
+    monthly_indices = generate_monthly_indices(dias_simulacion, start_date)
+
+    # Vectorized simulation
+    for dia in range(1, dias_simulacion):
+        simulaciones[:, dia] = simulaciones[:, dia - 1] * (1 + rendimientos[:, dia - 1])
+        if dia in monthly_indices:
+            simulaciones[:, dia] += aportacion_mensual
+
+    return simulaciones, rendimientos
+
+def plot_simulation_results(simulaciones: np.ndarray, anos_simulacion: int):
+    """Plot the simulation results using plotly."""
+    dias_simulacion = 252 * anos_simulacion
+    percentiles = np.percentile(simulaciones, [10, 50, 90], axis=0)
+    
+    fig = go.Figure()
+    x_axis = np.linspace(0, anos_simulacion, dias_simulacion)
+    fig.add_trace(go.Scatter(x=x_axis, y=percentiles[1], mode='lines', name='Median'))
+    fig.add_trace(go.Scatter(x=x_axis, y=percentiles[2], mode='lines', name='90th percentile'))
+    fig.add_trace(go.Scatter(x=x_axis, y=percentiles[0], mode='lines', name='10th percentile'))
+    
+    fig.update_layout(title='Portfolio Value Simulation',
+                      xaxis_title='Years',
+                      yaxis_title='Portfolio Value')
+    
+    return fig
+
+# Load asset expectations
+expectativas = load_asset_expectations()
+
+
+# Get current weights and initial portfolio value
+pesos_actuales = pesos.iloc[-1]
+saldo_inicial = valor.sum(axis=1).iloc[-1]
+
+# Create portfolio DataFrame
+df_cartera = create_portfolio_df(pesos_actuales, expectativas)
+
+# Set simulation parameters (these could be Streamlit inputs)
+num_simulaciones = 15000  # Increased for better statistical significance
+anos_simulacion = 6
+aportacion_mensual = 1250
+
+# Run simulation
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
+                                            anos_simulacion, aportacion_mensual)
+
+
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from datetime import datetime, timedelta
+
+def plot_simulation_results(simulaciones: np.ndarray, anos_simulacion: int):
+    """Plot the simulation results with date formatting and sorted hover values."""
+    dias_simulacion = 252 * anos_simulacion
+    percentiles = np.percentile(simulaciones, [1, 10, 25, 50, 75, 90, 99], axis=0)
+    final_values = simulaciones[:, -1]  # Final portfolio values for the histogram
+
+    # Generate dates starting from today
+    start_date = datetime.now()
+    #x_axis = [start_date + timedelta(days=i) for i in range(0, dias_simulacion)]
+    x_axis = pd.bdate_range(start=start_date, periods=dias_simulacion).to_pydatetime().tolist()
+
+    # Create a subplot with shared y-axis; the second plot is a histogram
+    fig = make_subplots(
+        rows=1, cols=2,
+        column_widths=[0.8, 0.2],
+        shared_yaxes=True,
+        horizontal_spacing=0.05,
+        specs=[[{"type": "scatter"}, {"type": "bar"}]]
+    )
+
+    # Percentile values sorted for hover template
+    hover_template = (
+        
+        '99th Percentile : %{customdata[0]:.0f} €<br>'
+        '90th Percentile : %{customdata[1]:.0f} €<br>'
+        '75th Percentile : %{customdata[2]:.0f} €<br>'
+        '50th Percentile : %{customdata[3]:.0f} €<br>'
+        '25th Percentile : %{customdata[4]:.0f} €<br>'
+        '10th Percentile : %{customdata[5]:.0f} €<br>'
+        '1st Percentile : %{customdata[6]:.0f} €<extra></extra>'
+    )
+
+    # Adding all lines
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[3],  # Median
+        mode='lines',
+        name='Median',
+        line=dict(color='green', width=2),
+        showlegend=False,
+        customdata=np.column_stack([percentiles[6], percentiles[5], percentiles[4],
+                                    percentiles[3], percentiles[2], percentiles[1], percentiles[0]]),
+        hovertemplate=hover_template
+    ), row=1, col=1)
+
+    # Add the percentile areas
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[6],  # 99th Percentile
+        mode='lines',
+        line=dict(width=0),
+        fill=None,
+        showlegend=False,
+        hoverinfo='skip'
+    ), row=1, col=1)
+
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[0],  # 1st Percentile
+        mode='lines',
+        fill='tonexty',
+        fillcolor='rgba(0, 100, 80, 0.5)',
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip'
+    ), row=1, col=1)
+
+
+
+        # Add the percentile areas
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[5],  # 99th Percentile
+        mode='lines',
+        line=dict(width=0),
+        fill=None,
+        showlegend=False,
+        hoverinfo='skip'
+    ), row=1, col=1)
+
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[1],  # 1st Percentile
+        mode='lines',
+        fill='tonexty',
+        fillcolor='rgba(0, 150, 80, 0.5)',
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip'
+    ), row=1, col=1)
+
+
+            # Add the percentile areas
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[4],  # 99th Percentile
+        mode='lines',
+        line=dict(width=0),
+        fill=None,
+        showlegend=False,
+        hoverinfo='skip'
+    ), row=1, col=1)
+
+    fig.add_trace(go.Scatter(
+        x=x_axis,
+        y=percentiles[2],  # 1st Percentile
+        mode='lines',
+        fill='tonexty',
+        fillcolor='rgba(0, 200, 80, 0.5)',
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip'
+    ), row=1, col=1)
+
+    # Add the histogram of final portfolio values
+    fig.add_trace(
+        go.Histogram(
+            y=final_values,
+            orientation='h',
+            marker=dict(color='rgba(100, 149, 237, 0.8)'),
+            showlegend=False,
+            nbinsy=50,
+            hovertemplate='%{y:.0f} €',
+        ), row=1, col=2
+    )
+
+    # Update layout for better aesthetics
+    fig.update_layout(
+        title='Enhanced Portfolio Value Simulation with Distribution Histogram',
+        xaxis=dict(
+            title='Date', 
+            tickformat='%B %Y',  # Display dates as "January 2025"
+            tickvals=x_axis[::63]  # Set monthly tick interval
+        ),
+        xaxis2=dict(title='Number of Simulations'),
+        yaxis_title='Portfolio Value',
+        hovermode='x unified',
+        template='plotly_white',
+        legend=dict(orientation="h", yanchor="top", y=0.83, xanchor="center", x=0.5),
+        margin=dict(l=50, r=50, b=100, t=100, pad=4),height=650
+    )
+
+    # Adjust axis settings
+    fig.update_yaxes(showgrid=True, zeroline=True, zerolinewidth=1, zerolinecolor='gray')
+
+    return fig
+
+# Example call to the improved plot function with simulation data
+
+
+st.plotly_chart(plot_simulation_results(simulaciones, anos_simulacion), use_container_width=True)
+
+
+
+# Calcular IRR para cada simulación usando fechas
+irrs = []
+start_date = datetime.now()
+dias_simulacion = anos_simulacion *252
+fechas_simulacion = pd.bdate_range(start=start_date, periods=dias_simulacion).to_pydatetime().tolist()
+fecha_aportes  = generate_monthly_indices(anos_simulacion*252, datetime.now())
+
+
+for i in range(num_simulaciones):
+    # Crear los flujos de caja: inicial negativo, aportaciones negativas, y valor final positivo
+    cash_flows = [-saldo_inicial] + [-aportacion_mensual] * len(fecha_aportes) + [simulaciones[i, -1]]
+    
+    # Crear las fechas correspondientes para los flujos de caja
+    cash_flow_dates = [start_date] + [fechas_simulacion[idx] for idx in fecha_aportes] + [fechas_simulacion[-1]]
+    
+    # Calcular IRR usando xirr
+    try:
+        irr = xirr(dict(zip(cash_flow_dates, cash_flows)))
+        irrs.append(irr * 100)  # Convertir a porcentaje
+    except ValueError:
+        irrs.append(np.nan)  # Manejar casos en los que no se pueda calcular
+
+
+
+# Limpiar NaN de IRR antes del histograma
+irrs = [x for x in irrs if not np.isnan(x)]
+
+
+fig_hist = go.Figure()
+
+fig_hist.add_trace(go.Histogram(
+    x=irrs, 
+    nbinsx=50,
+    marker_color='rgba(46, 204, 113, 0.7)',  # Color verde claro para modo oscuro
+    marker_line=dict(color='rgba(255, 255, 255, 0.5)', width=1)
+))
+
+fig_hist.update_layout(
+    title='Distribución de IRR de las Simulaciones',
+    xaxis_title='IRR (%)',
+    yaxis_title='Frecuencia',
+    #template='plotly_dark',  # Plantilla oscura
+    #plot_bgcolor='#1e1e1e',
+    #paper_bgcolor='#1e1e1e',
+    font=dict(color='white'),height=600
+)
+
+st.plotly_chart(fig_hist, use_container_width=True)
+
+
+
+################################
 
 st.divider()
 
