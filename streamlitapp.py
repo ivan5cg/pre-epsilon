@@ -1626,8 +1626,8 @@ def calculate_kpis(simulaciones: np.ndarray, anos_simulacion: int, saldo_inicial
     
     kpis = {
         "Median Final Value": np.median(final_values),
-        "Average Annual Return": (np.median(final_values) / total_invested) ** (1 / anos_simulacion) - 1,
-        "Probability of Profit": np.mean(final_values > total_invested),
+        "Average Annual Return": (np.median(final_values) / (total_invested)) ** (1 / anos_simulacion) - 1,
+        "Probability of Profit": np.mean(final_values > (total_invested - saldo_inicial + aportacion_mensual * 12 * anos_simulacion)),
         "Value at Risk (5%)": np.percentile(final_values, 5),
         "Maximum Drawdown": calculate_max_drawdown(simulaciones),
     }
