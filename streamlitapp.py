@@ -1588,32 +1588,37 @@ expectativas = load_asset_expectations()
 pesos_actuales = pesos.iloc[-1]
 saldo_inicial = valor.sum(axis=1).iloc[-1]
 
-# Create portfolio DataFrame
-df_editable = create_editable_df(pesos_actuales, expectativas)
+# Create editable DataFrame
+if 'df_editable' not in st.session_state:
+    st.session_state.df_editable = create_editable_df(pesos_actuales, expectativas)
 
-# Allow user to edit weights and expectations
-st.subheader("Edit Portfolio Weights and Asset Expectations")
-edited_df = st.data_editor(df_editable, key='portfolio_data')
+# Button to show/hide the editable dataframe
+if st.button("Edit Portfolio Weights and Asset Expectations"):
+    st.session_state.show_editor = not st.session_state.get('show_editor', False)
 
-# Update session state and recreate portfolio if changes were made
-if not edited_df.equals(df_editable):
-    # Update expectations in session state
-    st.session_state.asset_expectations = {
-        row['Activo']: {'retorno': row['Retorno'], 'volatilidad': row['Volatilidad']}
-        for _, row in edited_df.iterrows()
-    }
-    
-    # Update weights
-    pesos_actuales = pd.Series(edited_df['Peso'].values, index=edited_df['Activo'])
-    
-    # Recreate portfolio DataFrame
-    expectativas = st.session_state.asset_expectations
-    df_cartera = edited_df.query('Peso > 0')  # Remove assets with zero weight
-    
-    st.success("Portfolio weights and asset expectations updated. The simulation will use these new values.")
+# Show the editor if the button has been clicked
+if st.session_state.get('show_editor', False):
+    st.subheader("Edit Portfolio Weights and Asset Expectations")
+    edited_df = st.data_editor(st.session_state.df_editable, key='portfolio_data')
 
-else:
-    df_cartera = df_editable.query('Peso > 0')  # Remove assets with zero weight
+    # Update session state and recreate portfolio if changes were made
+    if not edited_df.equals(st.session_state.df_editable):
+        # Update expectations in session state
+        st.session_state.asset_expectations = {
+            row['Activo']: {'retorno': row['Retorno'], 'volatilidad': row['Volatilidad']}
+            for _, row in edited_df.iterrows()
+        }
+        
+        # Update weights
+        pesos_actuales = pd.Series(edited_df['Peso'].values, index=edited_df['Activo'])
+        
+        # Update the editable DataFrame in session state
+        st.session_state.df_editable = edited_df
+        
+        st.success("Portfolio weights and asset expectations updated. The simulation will use these new values.")
+
+# Use the most up-to-date data for the simulation
+df_cartera = st.session_state.df_editable.query('Peso > 0')  # Remove assets with zero weight
 
 # Run simulation
 simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
