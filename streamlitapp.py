@@ -1491,12 +1491,20 @@ def load_asset_expectations() -> Dict[str, Dict[str, float]]:
 
 def create_editable_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[str, float]]) -> pd.DataFrame:
     """Create and return a DataFrame with current weights and expectations for editing."""
-    df = pd.DataFrame({
-        'Activo': pesos_actuales.index,
-        'Peso': pesos_actuales.values,
-        'Retorno': [expectativas.get(activo, {}).get('retorno', 0) for activo in pesos_actuales.index],
-        'Volatilidad': [expectativas.get(activo, {}).get('volatilidad', 0) for activo in pesos_actuales.index]
-    })
+    # Create a DataFrame with all assets from expectations
+    df = pd.DataFrame([
+        {
+            'Activo': activo,
+            'Peso': pesos_actuales.get(activo, 0),
+            'Retorno': datos['retorno'],
+            'Volatilidad': datos['volatilidad']
+        }
+        for activo, datos in expectativas.items()
+    ])
+    
+    # Sort the DataFrame by the 'Activo' column to ensure consistent ordering
+    df = df.sort_values('Activo').reset_index(drop=True)
+    
     return df
 
 def create_portfolio_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[str, float]]) -> pd.DataFrame:
