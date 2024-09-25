@@ -1582,7 +1582,7 @@ expectativas = load_asset_expectations()
 
 
 # Get current weights and initial portfolio value
-pesos_actuales = pesos.iloc[-1]
+pesos_actuales = pesos.iloc[-1].sort_index()
 saldo_inicial = valor.sum(axis=1).iloc[-1]
 
 # Create editable DataFrame
