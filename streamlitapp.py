@@ -1496,12 +1496,6 @@ def create_editable_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[s
     df_cartera['Volatilidad'] = df_cartera['Activo'].map(lambda x: expectativas.get(x, {}).get('volatilidad', 0))
     return df_cartera.query('Peso > 0')
 
-def create_portfolio_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[str, float]]) -> pd.DataFrame:
-    """Create and return a DataFrame of the current portfolio with expected returns and volatilities."""
-    df_cartera = pd.DataFrame({'Activo': pesos_actuales.index, 'Peso': pesos_actuales.values})
-    df_cartera['Retorno'] = df_cartera['Activo'].map(lambda x: expectativas.get(x, {}).get('retorno', 0))
-    df_cartera['Volatilidad'] = df_cartera['Activo'].map(lambda x: expectativas.get(x, {}).get('volatilidad', 0))
-    return df_cartera.query('Peso > 0')  # Remove assets with zero weight
 
 def simular_rendimiento_optimizado(df: pd.DataFrame, dias: int, num_simulaciones: int, degrees_of_freedom: int = 5) -> np.ndarray:
     """Simulate portfolio returns using a t-distribution."""
@@ -1620,6 +1614,57 @@ df_cartera = st.session_state.df_editable.query('Peso > 0')  # Remove assets wit
 # Run simulation
 simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
                                             anos_simulacion, aportacion_mensual)
+
+
+
+
+
+def calculate_kpis(simulaciones: np.ndarray, anos_simulacion: int, saldo_inicial: float, aportacion_mensual: float) -> Dict[str, float]:
+    """Calculate KPIs from the simulation results."""
+    final_values = simulaciones[:, -1]
+    total_invested = saldo_inicial + aportacion_mensual * 12 * anos_simulacion
+    
+    kpis = {
+        "Median Final Value": np.median(final_values),
+        "Average Annual Return": (np.median(final_values) / total_invested) ** (1 / anos_simulacion) - 1,
+        "Probability of Profit": np.mean(final_values > total_invested),
+        "Value at Risk (5%)": np.percentile(final_values, 5),
+        "Maximum Drawdown": calculate_max_drawdown(simulaciones),
+    }
+    return kpis
+
+def calculate_max_drawdown(simulaciones: np.ndarray) -> float:
+    """Calculate the maximum drawdown across all simulations."""
+    cummax = np.maximum.accumulate(simulaciones, axis=1)
+    drawdowns = (simulaciones - cummax) / cummax
+    return np.min(drawdowns)
+
+def display_kpis(kpis: Dict[str, float]):
+    """Display KPIs in Streamlit."""
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Median Final Value", f"${kpis['Median Final Value']:,.0f}")
+        st.metric("Average Annual Return", f"{kpis['Average Annual Return']:.2%}")
+    
+    with col2:
+        st.metric("Probability of Profit", f"{kpis['Probability of Profit']:.2%}")
+        st.metric("Value at Risk (5%)", f"${kpis['Value at Risk (5%)']:,.0f}")
+    
+    with col3:
+        st.metric("Maximum Drawdown", f"{kpis['Maximum Drawdown']:.2%}")
+
+
+# Calculate KPIs
+kpis = calculate_kpis(simulaciones, anos_simulacion, saldo_inicial, aportacion_mensual)
+
+# Display KPIs
+st.subheader("Key Performance Indicators")
+display_kpis(kpis)
+
+
+
+
 
 def plot_simulation_results(simulaciones: np.ndarray, anos_simulacion: int):
     """Plot the simulation results with date formatting and sorted hover values."""
