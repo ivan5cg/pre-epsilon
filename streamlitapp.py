@@ -1617,60 +1617,42 @@ simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simul
 
 
 
-def format_euro(value: float) -> str:
-    """Format a value as euros."""
-    return f"{value:,.0f} €".replace(",", ".")
+
 
 def calculate_kpis(simulaciones: np.ndarray, anos_simulacion: int, saldo_inicial: float, aportacion_mensual: float) -> Dict[str, float]:
     """Calculate KPIs from the simulation results."""
     final_values = simulaciones[:, -1]
     total_invested = saldo_inicial + aportacion_mensual * 12 * anos_simulacion
     
-    # Calculate returns excluding monthly contributions
-    monthly_indices = np.arange(0, simulaciones.shape[1], 21)  # Assuming 21 trading days per month
-    cumulative_contributions = np.arange(simulaciones.shape[1]) // 21 * aportacion_mensual
-    returns_excl_contributions = (simulaciones - cumulative_contributions[np.newaxis, :]) / saldo_inicial - 1
-    
     kpis = {
         "Median Final Value": np.median(final_values),
         "Average Annual Return": (np.median(final_values) / total_invested) ** (1 / anos_simulacion) - 1,
-        "Probability of Profit": np.mean(returns_excl_contributions[:, -1] > 0),
+        "Probability of Profit": np.mean(final_values > total_invested),
         "Value at Risk (5%)": np.percentile(final_values, 5),
-        "Maximum Drawdown": calculate_max_drawdown(returns_excl_contributions),
-        "Sharpe Ratio": calculate_sharpe_ratio(returns_excl_contributions),
+        "Maximum Drawdown": calculate_max_drawdown(simulaciones),
     }
     return kpis
 
-def calculate_max_drawdown(returns: np.ndarray) -> float:
+def calculate_max_drawdown(simulaciones: np.ndarray) -> float:
     """Calculate the maximum drawdown across all simulations."""
-    cumulative_returns = (1 + returns).cumprod(axis=1) - 1
-    peak_values = np.maximum.accumulate(cumulative_returns, axis=1)
-    drawdowns = (cumulative_returns - peak_values) / (1 + peak_values)
+    cummax = np.maximum.accumulate(simulaciones, axis=1)
+    drawdowns = (simulaciones - cummax) / cummax
     return np.min(drawdowns)
-
-def calculate_sharpe_ratio(returns: np.ndarray) -> float:
-    """Calculate the Sharpe ratio based on the simulation results."""
-    annual_returns = returns[:, -1]  # Assuming the last column represents annual returns
-    annual_volatility = np.std(annual_returns)
-    risk_free_rate = 0.02  # Assuming a 2% risk-free rate
-    return (np.mean(annual_returns) - risk_free_rate) / annual_volatility
 
 def display_kpis(kpis: Dict[str, float]):
     """Display KPIs in Streamlit."""
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Median Final Value", format_euro(kpis['Median Final Value']))
+        st.metric("Median Final Value", f"${kpis['Median Final Value']:,.0f}")
         st.metric("Average Annual Return", f"{kpis['Average Annual Return']:.2%}")
     
     with col2:
         st.metric("Probability of Profit", f"{kpis['Probability of Profit']:.2%}")
-        st.metric("Value at Risk (5%)", format_euro(kpis['Value at Risk (5%)']))
+        st.metric("Value at Risk (5%)", f"${kpis['Value at Risk (5%)']:,.0f}")
     
     with col3:
         st.metric("Maximum Drawdown", f"{kpis['Maximum Drawdown']:.2%}")
-        st.metric("Sharpe Ratio", f"{kpis['Sharpe Ratio']:.2f}")
-
 
 
 # Calculate KPIs
