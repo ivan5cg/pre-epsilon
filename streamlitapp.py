@@ -1615,7 +1615,9 @@ if not edited_df.equals(df_editable):
 else:
     df_cartera = df_editable.query('Peso > 0')  # Remove assets with zero weight
 
-
+# Run simulation
+simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
+                                            anos_simulacion, aportacion_mensual)
 
 def plot_simulation_results(simulaciones: np.ndarray, anos_simulacion: int):
     """Plot the simulation results with date formatting and sorted hover values."""
