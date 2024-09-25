@@ -1616,7 +1616,9 @@ simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simul
                                             anos_simulacion, aportacion_mensual)
 
 
-
+def format_euro(value: float) -> str:
+    """Format a value as euros."""
+    return f"{value:,.0f} €".replace(",", ".")
 
 
 def calculate_kpis(simulaciones: np.ndarray, anos_simulacion: int, saldo_inicial: float, aportacion_mensual: float) -> Dict[str, float]:
@@ -1644,15 +1646,16 @@ def display_kpis(kpis: Dict[str, float]):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Median Final Value", f"${kpis['Median Final Value']:,.0f}")
+        st.metric("Median Final Value", format_euro(kpis['Median Final Value']))
         st.metric("Average Annual Return", f"{kpis['Average Annual Return']:.2%}")
     
     with col2:
         st.metric("Probability of Profit", f"{kpis['Probability of Profit']:.2%}")
-        st.metric("Value at Risk (5%)", f"${kpis['Value at Risk (5%)']:,.0f}")
+        st.metric("Value at Risk (5%)", format_euro(kpis['Value at Risk (5%)']))
     
     with col3:
         st.metric("Maximum Drawdown", f"{kpis['Maximum Drawdown']:.2%}")
+
 
 
 # Calculate KPIs
