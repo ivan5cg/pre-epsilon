@@ -1471,21 +1471,33 @@ with col3:
 
 
 def load_asset_expectations() -> Dict[str, Dict[str, float]]:
-    """Load and return asset expectations."""
-    return {
-        '0.0 ETF monetario': {'retorno': 0.02, 'volatilidad': 0.005},
-        '0.1 Fondo monetario': {'retorno': 0.02, 'volatilidad': 0.005},
-        '1.1 World': {'retorno': 0.07, 'volatilidad': 0.15},
-        '1.2 Europa Small': {'retorno': 0.085, 'volatilidad': 0.20},
-        '1.3 USA Small Value': {'retorno': 0.085, 'volatilidad': 0.20},
-        '1.4 Emergentes': {'retorno': 0.08, 'volatilidad': 0.25},
-        '1.5 ETF bitcoin': {'retorno': 0.20, 'volatilidad': 0.50},
-        '1.6 Uranio': {'retorno': 0.12, 'volatilidad': 0.45},
-        '2.1 Tesla': {'retorno': 0.15, 'volatilidad': 0.40},
-        '2.2 Brookfield Corp': {'retorno': 0.11, 'volatilidad': 0.22},
-        '2.3 St Joe': {'retorno': 0.09, 'volatilidad': 0.20},
-        '2.4 Brookfield AM': {'retorno': 0.10, 'volatilidad': 0.21},
-    }
+    """Load and return asset expectations, using session state if available."""
+    if 'asset_expectations' not in st.session_state:
+        st.session_state.asset_expectations = {
+            '0.0 ETF monetario': {'retorno': 0.02, 'volatilidad': 0.005},
+            '0.1 Fondo monetario': {'retorno': 0.02, 'volatilidad': 0.005},
+            '1.1 World': {'retorno': 0.07, 'volatilidad': 0.15},
+            '1.2 Europa Small': {'retorno': 0.085, 'volatilidad': 0.20},
+            '1.3 USA Small Value': {'retorno': 0.085, 'volatilidad': 0.20},
+            '1.4 Emergentes': {'retorno': 0.08, 'volatilidad': 0.25},
+            '1.5 ETF bitcoin': {'retorno': 0.20, 'volatilidad': 0.50},
+            '1.6 Uranio': {'retorno': 0.12, 'volatilidad': 0.45},
+            '2.1 Tesla': {'retorno': 0.15, 'volatilidad': 0.40},
+            '2.2 Brookfield Corp': {'retorno': 0.11, 'volatilidad': 0.22},
+            '2.3 St Joe': {'retorno': 0.09, 'volatilidad': 0.20},
+            '2.4 Brookfield AM': {'retorno': 0.10, 'volatilidad': 0.21},
+        }
+    return st.session_state.asset_expectations
+
+def create_editable_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[str, float]]) -> pd.DataFrame:
+    """Create and return a DataFrame with current weights and expectations for editing."""
+    df = pd.DataFrame({
+        'Activo': pesos_actuales.index,
+        'Peso': pesos_actuales.values,
+        'Retorno': [expectativas.get(activo, {}).get('retorno', 0) for activo in pesos_actuales.index],
+        'Volatilidad': [expectativas.get(activo, {}).get('volatilidad', 0) for activo in pesos_actuales.index]
+    })
+    return df
 
 def create_portfolio_df(pesos_actuales: pd.Series, expectativas: Dict[str, Dict[str, float]]) -> pd.DataFrame:
     """Create and return a DataFrame of the current portfolio with expected returns and volatilities."""
@@ -1577,17 +1589,31 @@ pesos_actuales = pesos.iloc[-1]
 saldo_inicial = valor.sum(axis=1).iloc[-1]
 
 # Create portfolio DataFrame
-df_cartera = create_portfolio_df(pesos_actuales, expectativas)
+df_editable = create_editable_df(pesos_actuales, expectativas)
 
-if st.button("Modify any value in the portfolio"):
-    edited_df = st.data_editor(df_cartera, key='portfolio_data')
+# Allow user to edit weights and expectations
+st.subheader("Edit Portfolio Weights and Asset Expectations")
+edited_df = st.data_editor(df_editable, key='portfolio_data')
 
-    if edited_df is not None:
-        df_cartera.update(edited_df)
+# Update session state and recreate portfolio if changes were made
+if not edited_df.equals(df_editable):
+    # Update expectations in session state
+    st.session_state.asset_expectations = {
+        row['Activo']: {'retorno': row['Retorno'], 'volatilidad': row['Volatilidad']}
+        for _, row in edited_df.iterrows()
+    }
+    
+    # Update weights
+    pesos_actuales = pd.Series(edited_df['Peso'].values, index=edited_df['Activo'])
+    
+    # Recreate portfolio DataFrame
+    expectativas = st.session_state.asset_expectations
+    df_cartera = edited_df.query('Peso > 0')  # Remove assets with zero weight
+    
+    st.success("Portfolio weights and asset expectations updated. The simulation will use these new values.")
 
-# Run simulation
-simulaciones, rendimientos = run_simulation(df_cartera, saldo_inicial, num_simulaciones, 
-                                            anos_simulacion, aportacion_mensual)
+else:
+    df_cartera = df_editable.query('Peso > 0')  # Remove assets with zero weight
 
 
 
