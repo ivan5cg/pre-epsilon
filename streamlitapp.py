@@ -1480,9 +1480,86 @@ fig.update_layout(
 
 st.plotly_chart(fig,use_container_width=True)
 
+##################################
 
+# Remove days with zero returns
+returns_nonzero = rendimiento_portfolio[rendimiento_portfolio != 0]
 
+# Calculate statistics
+mean_return = returns_nonzero.mean()
+median_return = returns_nonzero.median()
+std_dev = returns_nonzero.std()
 
+# Calculate the range for the bins
+max_abs_return = max(abs(returns_nonzero.min()), abs(returns_nonzero.max()))
+min_return = -np.ceil(max_abs_return * 1000) / 1000
+max_return = np.ceil(max_abs_return * 1000) / 1000
+
+# Create bins for every 10 basis points
+bins = np.arange(min_return, max_return + 0.001, 0.001)
+
+# Create the Plotly figure
+fig = go.Figure()
+
+# Add histogram trace
+fig.add_trace(go.Histogram(
+    x=returns_nonzero,
+    name='Daily Returns',
+    opacity=0.75,
+    marker_color='blue',
+    xbins=dict(
+        start=min_return,
+        end=max_return,
+        size=0.001
+    ),
+    autobinx=False
+))
+
+# Add density curve
+kde = stats.gaussian_kde(returns_nonzero)
+x_range = np.linspace(min_return, max_return, 1000)
+y_range = kde(x_range)
+fig.add_trace(go.Scatter(x=x_range, y=y_range * len(returns_nonzero) * 0.001, 
+                         mode='lines', name='Density', line=dict(color='red')))
+
+# Update layout
+fig.update_layout(
+    title='Histogram of Portfolio Daily Returns (Excluding Zero-Return Days)',
+    xaxis_title='Return',
+    yaxis_title='Frequency',
+    bargap=0.05,  # Gap between bars
+    showlegend=False,
+    xaxis=dict(
+        tickformat='.1%',  # Format x-axis labels as percentages
+        tickmode='array',
+        tickvals=np.arange(min_return, max_return + 0.001, 0.01),  # Major ticks every 1%
+        ticktext=[f'{x:.1%}' for x in np.arange(min_return, max_return + 0.001, 0.01)],
+        range=[min_return, max_return]  # Center the graph
+    )
+)
+
+# Add a vertical line at x=0
+fig.add_vline(x=0, line_dash="dash", line_color="black")
+
+# Add statistics box
+stats_text = (f"Mean: {mean_return:.2%}<br>"
+              f"Median: {median_return:.2%}<br>"
+              f"Std Dev: {std_dev:.2%}")
+
+fig.add_annotation(
+    xref="paper", yref="paper",
+    x=0.95, y=0.95,
+    text=stats_text,
+    showarrow=False,
+    font=dict(size=12),
+    align="left",
+    bgcolor="white",
+    bordercolor="black",
+    borderwidth=1
+)
+
+# Show the plot
+st.plotly_chart(fig,use_container_width=True)
 
 
 ################################
