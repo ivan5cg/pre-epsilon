@@ -1524,7 +1524,7 @@ fig.add_trace(go.Scatter(x=x_range, y=y_range * len(returns_nonzero) * 0.001,
 
 # Update layout
 fig.update_layout(
-    title='Histogram of Portfolio Daily Returns (Excluding Zero-Return Days)',
+    title='Histogram of Portfolio Daily Returns',
     xaxis_title='Return',
     yaxis_title='Frequency',
     bargap=0.05,  # Gap between bars
