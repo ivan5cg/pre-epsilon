@@ -1483,6 +1483,33 @@ st.plotly_chart(fig,use_container_width=True)
 
 
 
+
+
+################################
+
+st.divider()
+
+
+fig = qs.plots.snapshot(rendimiento_portfolio,show=False,figsize=(8,8))
+
+st.pyplot(fig)
+
+fig = qs.plots.monthly_heatmap(rendimiento_portfolio,benchmark,show=False,figsize=(8,5.5))
+
+st.pyplot(fig)
+
+
+fig =  qs.plots.drawdowns_periods(rendimiento_portfolio,show=False,figsize=(8,5.5))
+
+st.pyplot(fig)
+
+
+
+fig =   qs.plots.rolling_volatility(rendimiento_portfolio,period=20,period_label="21 días",show=False,figsize=(8,5.5))
+
+st.pyplot(fig)
+
+
 ############################
 
 import plotly.graph_objects as go
@@ -1920,29 +1947,3 @@ st.plotly_chart(fig_hist, use_container_width=True)
 
 
 
-
-
-
-################################
-
-st.divider()
-
-
-fig = qs.plots.snapshot(rendimiento_portfolio,show=False,figsize=(8,8))
-
-st.pyplot(fig)
-
-fig = qs.plots.monthly_heatmap(rendimiento_portfolio,benchmark,show=False,figsize=(8,5.5))
-
-st.pyplot(fig)
-
-
-fig =  qs.plots.drawdowns_periods(rendimiento_portfolio,show=False,figsize=(8,5.5))
-
-st.pyplot(fig)
-
-
-
-fig =   qs.plots.rolling_volatility(rendimiento_portfolio,period=20,period_label="21 días",show=False,figsize=(8,5.5))
-
-st.pyplot(fig)
