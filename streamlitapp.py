@@ -1520,7 +1520,7 @@ kde = stats.gaussian_kde(returns_nonzero)
 x_range = np.linspace(min_return, max_return, 1000)
 y_range = kde(x_range)
 fig.add_trace(go.Scatter(x=x_range, y=y_range * len(returns_nonzero) * 0.001, 
-                         mode='lines', name='Density', line=dict(color='red')))
+                         mode='lines', name='Density', line=dict(color='darkorange')))
 
 # Update layout
 fig.update_layout(
