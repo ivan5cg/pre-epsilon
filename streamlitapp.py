@@ -1506,7 +1506,7 @@ fig.add_trace(go.Histogram(
     x=returns_nonzero,
     name='Daily Returns',
     opacity=0.75,
-    marker_color='blue',
+    #marker_color='blue',
     xbins=dict(
         start=min_return,
         end=max_return,
