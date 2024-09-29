@@ -1553,8 +1553,8 @@ fig.add_annotation(
     showarrow=False,
     font=dict(size=12),
     align="left",
-    bgcolor="white",
-    bordercolor="black",
+    #bgcolor="white",
+    #bordercolor="black",
     borderwidth=1
 )
 
