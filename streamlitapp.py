@@ -1447,6 +1447,72 @@ st.plotly_chart(fig,use_container_width=True)
 
 ############################
 
+
+
+# Assuming 'pesos' is your DataFrame
+df = pesos.loc["2024":].dropna()
+
+# Create a custom color palette
+colors = px.colors.qualitative.Prism
+
+# Create the stacked area chart
+fig = go.Figure()
+
+for i, column in enumerate(df.columns):
+    fig.add_trace(go.Scatter(
+        x=df.index,
+        y=df[column],
+        mode='lines',
+        stackgroup='one',
+        name=column,
+        hoverinfo='x+y+name',
+        line=dict(width=0.5, color=colors[i % len(colors)]),
+        fillcolor=colors[i % len(colors)]
+    ))
+
+# Customize the layout
+fig.update_layout(
+    title={
+        'text': 'Portfolio Weight Evolution',
+        'font': {'size': 24, 'color': '#1f77b4'}
+    },
+    xaxis_title='Date',
+    yaxis_title='Weight',
+    yaxis=dict(
+        type='linear',
+        range=[0, 1],
+        tickformat='.1%'
+    ),
+    legend_title='Assets',
+    hovermode='x unified',
+    plot_bgcolor='rgba(240,240,240,0.8)',  # Light gray background
+    paper_bgcolor='white',
+    font=dict(family="Arial, sans-serif", size=12, color="#333"),
+    legend=dict(
+        bgcolor='rgba(255,255,255,0.8)',
+        bordercolor='rgba(0,0,0,0.1)',
+        borderwidth=1
+    )
+)
+
+# Update axes
+fig.update_xaxes(
+    showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.2)',
+    zeroline=True, zerolinewidth=2, zerolinecolor='rgba(0,0,0,0.2)'
+)
+fig.update_yaxes(
+    showgrid=True, gridwidth=1, gridcolor='rgba(200,200,200,0.2)',
+    zeroline=True, zerolinewidth=2, zerolinecolor='rgba(0,0,0,0.2)'
+)
+
+
+st.plotly_chart(fig,use_container_width=True)
+
+
+
+
+############################
+
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from typing import Dict, Tuple
@@ -1873,6 +1939,15 @@ fig_hist.update_layout(
 
 # Mostrar gráfico
 st.plotly_chart(fig_hist, use_container_width=True)
+
+################################
+
+
+
+
+
+
+
 
 
 
