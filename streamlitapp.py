@@ -1136,7 +1136,7 @@ with col1:
 
         with col2:
 
-            #asset_irr = st.selectbox("Activo",xirr_df.columns)
+            ##asset_irr = st.selectbox("Activo",xirr_df.columns)
 
             fig = px.line(100 * xirr_df.loc["2024":],title='IRR')
 
