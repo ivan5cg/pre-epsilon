@@ -1498,6 +1498,16 @@ max_return = np.ceil(max_abs_return * 1000) / 1000
 # Create bins for every 10 basis points
 bins = np.arange(min_return, max_return + 0.001, 0.001)
 
+# Get the returns from the last 10 days and their dates
+last_10_returns = returns_nonzero[-10:]
+last_10_dates = rendimiento_portfolio.index[-10:]
+
+# Highlight the bins that contain the last 10 days' returns
+highlight_bins = np.digitize(last_10_returns, bins)
+
+# Calculate the histogram manually to get bin heights
+hist_values, hist_bins = np.histogram(returns_nonzero, bins=bins)
+
 # Create the Plotly figure
 fig = go.Figure()
 
@@ -1506,14 +1516,22 @@ fig.add_trace(go.Histogram(
     x=returns_nonzero,
     name='Daily Returns',
     opacity=0.75,
-    #marker_color='blue',
     xbins=dict(
         start=min_return,
         end=max_return,
         size=0.001
     ),
-    autobinx=False
+    autobinx=False,
+    marker_color='blue'  # Default bin color, no additional formatting
 ))
+
+# Highlight bins for the last 10 days with yellow color
+for bin_idx in highlight_bins:
+    bin_value = bins[bin_idx - 1]  # Get the left edge of the bin
+    fig.add_shape(type="rect",
+                  x0=bin_value, x1=bin_value + 0.001,  # Bin size is 0.001
+                  y0=0, y1=hist_values[bin_idx - 1],  # Respect original bin height
+                  fillcolor="yellow", opacity=0.5, line_width=0)
 
 # Add density curve
 kde = stats.gaussian_kde(returns_nonzero)
@@ -1539,7 +1557,7 @@ fig.update_layout(
 )
 
 # Add a vertical line at x=0
-fig.add_vline(x=0, line_dash="dash", line_color="black")
+fig.add_vline(x=0, line_dash="dash", line_color="white")
 
 # Add statistics box
 stats_text = (f"Mean: {mean_return:.2%}<br>"
@@ -1553,8 +1571,19 @@ fig.add_annotation(
     showarrow=False,
     font=dict(size=12),
     align="left",
-    #bgcolor="white",
-    #bordercolor="black",
+    borderwidth=1
+)
+
+# Add a text box with the last 10 days' returns formatted with dates
+last_10_text = "<br>".join([f"{datetime.datetime.strftime(date, '%b %d')}: {rtn:.2%}" 
+                            for date, rtn in zip(last_10_dates, last_10_returns)])
+fig.add_annotation(
+    xref="paper", yref="paper",
+    x=0.95, y=0.75,  # Position under the stats box
+    text=f"Last 10 Days:<br>{last_10_text}",
+    showarrow=False,
+    font=dict(size=10),
+    align="left",
     borderwidth=1
 )
 
