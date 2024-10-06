@@ -1522,7 +1522,7 @@ fig.add_trace(go.Histogram(
         size=0.001
     ),
     autobinx=False,
-    marker_color='blue'  # Default bin color, no additional formatting
+    
 ))
 
 # Highlight bins for the last 10 days with yellow color
