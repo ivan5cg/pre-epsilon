@@ -1575,7 +1575,7 @@ fig.add_annotation(
 )
 
 # Add a text box with the last 10 days' returns formatted with dates
-last_10_text = "<br>".join([f"{datetime.datetime.strftime(date, '%b %d')}: {rtn:.2%}" 
+last_10_text = "<br>".join([f"{datetime.strftime(date, '%b %d')}: {rtn:.2%}" 
                             for date, rtn in zip(last_10_dates, last_10_returns)])
 fig.add_annotation(
     xref="paper", yref="paper",
