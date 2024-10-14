@@ -454,7 +454,7 @@ with col2:
     btc_tz = pytz.timezone("Etc/UTC")
 
     # Define date range
-    fecha_inicio_ = datetime.now() - timedelta(4) 
+    fecha_inicio_ = datetime.now() - timedelta(2) 
     fecha_hoy_ = datetime.now(madrid_tz)  # Ensure current date is in Madrid timezone
     fecha_formateada = fecha_hoy_.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -530,7 +530,54 @@ with col2:
     # Calculate returns
     rendimientos_iday = (precios_iday / precios_iday.iloc[0])
 
-    st.write(rendimientos_iday)
+    import plotly.graph_objects as go
+
+    # Eje X (asumiendo que rendimientos_iday.index contiene las fechas)
+    eje_x = rendimientos_iday.index
+
+    # Serie 1: (rendimientos_iday * pesos).sum(axis=1)
+    serie_1 = (rendimientos_iday * pesos.loc[precios_iday.dropna().index[0].normalize().tz_localize(None)]).sum(axis=1)
+
+    # Serie 2: rendimientos_iday["1.1 World"]
+    serie_2 = rendimientos_iday["1.1 World"]
+
+    # Crear figura con las dos líneas
+    fig = go.Figure()
+
+    # Añadir primera línea
+    fig.add_trace(go.Scatter(
+        x=eje_x, 
+        y=serie_1,
+        mode='lines',
+        name='Rendimientos Ajustados'
+    ))
+
+    # Añadir segunda línea
+    fig.add_trace(go.Scatter(
+        x=eje_x, 
+        y=serie_2,
+        mode='lines',
+        name='1.1 World'
+    ))
+
+    # Configurar eje X con formato dd hh:mm
+    fig.update_xaxes(
+        tickformat='%d %H:%M',
+        title_text='Fecha (dd hh:mm)'
+    )
+
+    # Configurar título y leyenda
+    fig.update_layout(
+        title='Comparación de Rendimientos',
+        xaxis_title='Fecha (dd hh:mm)',
+        yaxis_title='Rendimiento',
+        legend_title='Series'
+    )
+
+    # Mostrar gráfico
+    st.plotly_chart(fig)
+
+
 
 
 st.divider()
