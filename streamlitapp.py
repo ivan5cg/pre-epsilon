@@ -544,22 +544,40 @@ with col2:
     # Crear figura con las dos líneas
     fig = go.Figure()
 
-    # Añadir primera línea
+    # Añadir primera línea sin markers
     fig.add_trace(go.Scatter(
         x=eje_x, 
         y=serie_1,
-        mode='lines+markers',  # Agregar markers a la línea
-        name='Rendimientos Ajustados',
-        marker=dict(symbol='circle', size=8)  # Configurar el marcador como punto (círculo)
+        mode='lines',  # Solo líneas, sin markers
+        name='Rendimientos Ajustados'
     ))
 
-    # Añadir segunda línea
+    # Añadir segunda línea sin markers
     fig.add_trace(go.Scatter(
         x=eje_x, 
         y=serie_2,
-        mode='lines+markers',  # Agregar markers a la línea
-        name='1.1 World',
-        marker=dict(symbol='circle', size=8)  # Configurar el marcador como punto (círculo)
+        mode='lines',  # Solo líneas, sin markers
+        name='1.1 World'
+    ))
+
+    # Añadir marcador solo en la última fecha de la primera serie
+    fig.add_trace(go.Scatter(
+        x=[eje_x[-1]],  # Última fecha
+        y=[serie_1[-1]],  # Último valor de la primera serie
+        mode='markers',  # Solo el marcador
+        marker=dict(symbol='circle', size=8),  # Configurar el marcador como punto
+        name='Último Rendimiento Ajustado',  # Leyenda del marcador
+        showlegend=False  # Ocultar de la leyenda
+    ))
+
+    # Añadir marcador solo en la última fecha de la segunda serie
+    fig.add_trace(go.Scatter(
+        x=[eje_x[-1]],  # Última fecha
+        y=[serie_2[-1]],  # Último valor de la segunda serie
+        mode='markers',  # Solo el marcador
+        marker=dict(symbol='circle', size=8),  # Configurar el marcador como punto
+        name='Último 1.1 World',  # Leyenda del marcador
+        showlegend=False  # Ocultar de la leyenda
     ))
 
     # Configurar eje X con formato dd hh:mm
@@ -597,6 +615,7 @@ with col2:
         yanchor='middle',
         font=dict(size=12)  # Ajustar tamaño de la fuente
     )
+
 
 
     st.plotly_chart(fig)
