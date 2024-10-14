@@ -430,9 +430,112 @@ tabla_resumen = tabla_resumen.style.applymap(color_negativo_positivo_cero, subse
     'IRR': "{:,.2f} %"
 })
 
-st.write(tabla_resumen)
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+
+
+    st.write(tabla_resumen)
+
+
+with col2:
+
+    import pytz
+
+    # Set time zone to Madrid
+    madrid_tz = pytz.timezone("Europe/Madrid")
+
+    ny_tz = pytz.timezone("America/New_York")
+
+    ccy_tz = pytz.timezone("Etc/GMT-1")
+
+    btc_tz = pytz.timezone("Etc/UTC")
+
+    # Define date range
+    fecha_inicio_ = datetime.now() - timedelta(4) 
+    fecha_hoy_ = datetime.now(madrid_tz)  # Ensure current date is in Madrid timezone
+    fecha_formateada = fecha_hoy_.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Generate a range of 15-minute intervals from 08:00 to 23:00, Monday to Sunday
+    rango_fechas_ = pd.date_range(start=fecha_inicio_, end=fecha_formateada, freq='15T', tz=madrid_tz)
+
+    # Filter time range to keep only between 08:00 and 23:00
+    rango_fechas_ = rango_fechas_[(rango_fechas_.hour >= 8) & (rango_fechas_.hour < 23)]
+
+    # Create an empty DataFrame for prices
+    precios_iday = pd.DataFrame(index=rango_fechas_)
+
+    # Crear una copia de los tickers originales
+    tickers_iday = movimientos["Yahoo Ticker"].dropna().unique().copy()
+
+    # Reemplazar '0P0001AINL.F' por 'IWDA.AS' y '0P0001AINF.F' por 'EUNM.DE' en la copia
+    tickers_iday = [ticker.replace('0P0001AINL.F', 'IWDA.AS').replace('0P0001AINF.F', 'EUNM.DE') for ticker in tickers_iday]
+
+
+    # Ahora puedes usar la lista `tickers` para el bucle sin afectar al DataFrame original
+
+
+    # Download intraday data for each ticker and resample it for 15-min intervals
+    for i in tickers_iday:
+
+
+        if i in ['U3O8.DE', 'ZPRV.DE', 'IWDA.AS', 'EUNM.DE', 'SMCX.MI','TL0.DE']:
+
+            data = yf.download(i, start=fecha_inicio_, interval="15m", progress=False)
+            data = data.tz_localize(madrid_tz)  # Convert data to Madrid timezone
+            precios_iday[i] = data["Adj Close"].reindex(rango_fechas_, method="ffill")  # Resample and forward-fill missing data
+
+        if i in ['BAM', 'BN', 'JOE']:
+
+            data = yf.download(i, start=fecha_inicio_, interval="15m", progress=False)
+            data = data.tz_localize(ny_tz) 
+            precios_iday[i] = data["Adj Close"].reindex(rango_fechas_, method="ffill")  # Resample and forward-fill missing data # Convert data to Madrid timezone
+
+    # Download EUR/USD exchange rate data (15-min intervals)
+
+    eurusd = yf.download("EURUSD=X", start=fecha_inicio_, interval="15m", progress=False)
+    eurusd = eurusd.tz_localize(ccy_tz).reindex(rango_fechas_, method="ffill")["Adj Close"]
+
+    # Download Bitcoin data (BTC-USD) and adjust for EUR/USD conversion
+    
+    btc_usd = yf.download("BTC-USD", start=fecha_inicio_, interval="15m", progress=False)
+    btc_usd = btc_usd.tz_localize(btc_tz).reindex(rango_fechas_, method="ffill")["Adj Close"]
+    precios_iday["WBIT"] = btc_usd / eurusd * 0.0002396
+
+    # Adjust other tickers for EUR/USD
+    for ticker in ["JOE", "BN", "BAM"]:
+        precios_iday[ticker] = precios_iday[ticker] / eurusd
+
+    # Fill forward missing data
+    precios_iday = precios_iday.fillna(method="ffill")
+    precios_iday = precios_iday.dropna()
+
+    # Optionally, filter out weekends if desired (optional)
+    # precios = precios[precios.index.dayofweek < 5]
+
+
+    # Rename columns
+    column_mapping_prices = {
+        'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio',
+        'ZPRV.DE': '1.3 USA Small Value', 'IWDA.AS': '1.1 World', 'EUNM.DE': '1.4 Emergentes',
+        'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla',
+        'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
+    }
+
+    precios_iday.rename(columns=column_mapping_prices, inplace=True)
+    precios_iday = precios_iday.sort_index(axis=1)
+
+    # Calculate returns
+    rendimientos_iday = (precios_iday / precios_iday.iloc[0])
+
+    st.write(rendimientos_iday)
+
 
 st.divider()
+
+
 
 col1, col2,col3,col4,col5,col6 = st.columns(6)
 
