@@ -549,7 +549,7 @@ with col2:
         x=eje_x, 
         y=serie_1,
         mode='lines',  # Solo líneas, sin markers
-        name='Portfolio'
+        name='Rendimientos Ajustados'
     ))
 
     # Añadir segunda línea sin markers
@@ -557,7 +557,7 @@ with col2:
         x=eje_x, 
         y=serie_2,
         mode='lines',  # Solo líneas, sin markers
-        name='Benchmark'
+        name='1.1 World'
     ))
 
     # Añadir marcador solo en la última fecha de la primera serie
@@ -580,16 +580,16 @@ with col2:
         showlegend=False  # Ocultar de la leyenda
     ))
 
-    # Configurar eje X con formato dd hh:mm
+    # Configurar eje X con formato dd/mm hh:mm
     fig.update_xaxes(
-        tickformat='%d %H:%M',
-        title_text='Fecha (dd hh:mm)'
+        tickformat='%d/%m %H:%M',  # Formato dd/mm hh:mm
+        title_text='Fecha (dd/mm hh:mm)'
     )
 
     # Configurar título y leyenda
     fig.update_layout(
         title='Comparación de Rendimientos',
-        xaxis_title='Fecha (dd hh:mm)',
+        xaxis_title='Fecha (dd/mm hh:mm)',
         yaxis_title='Rendimiento',
         legend_title='Series'
     )
@@ -598,23 +598,26 @@ with col2:
     fig.add_annotation(
         x=eje_x[-1],  # Última fecha
         y=serie_1[-1],  # Último valor de la serie 1
-        text=f"<b>{serie_1[-1]:.3f}</b>",  # Texto en negrita con el valor
+        text=f"<b>{serie_1[-1]:.2f}</b>",  # Texto en negrita con el valor
         showarrow=False,  # No mostrar la flecha
         xanchor='left',  # Colocar a la derecha del marcador
         yanchor='middle',
-        font=dict(size=10)  # Ajustar tamaño de la fuente
+        xshift=10,  # Desplazar texto a la derecha del marcador
+        font=dict(size=10)  # Reducir tamaño de la fuente
     )
 
     # Anotaciones para el valor final de la serie 2
     fig.add_annotation(
         x=eje_x[-1],  # Última fecha
         y=serie_2[-1],  # Último valor de la serie 2
-        text=f"<b>{serie_2[-1]:.3f}</b>",  # Texto en negrita con el valor
+        text=f"<b>{serie_2[-1]:.2f}</b>",  # Texto en negrita con el valor
         showarrow=False,  # No mostrar la flecha
         xanchor='left',  # Colocar a la derecha del marcador
         yanchor='middle',
-        font=dict(size=10)  # Ajustar tamaño de la fuente
+        xshift=10,  # Desplazar texto a la derecha del marcador
+        font=dict(size=10)  # Reducir tamaño de la fuente
     )
+
 
 
 
