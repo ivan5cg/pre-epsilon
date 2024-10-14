@@ -549,7 +549,7 @@ with col2:
         x=eje_x, 
         y=serie_1,
         mode='lines',  # Solo líneas, sin markers
-        name='Rendimientos Ajustados'
+        name='Portfolio'
     ))
 
     # Añadir segunda línea sin markers
@@ -557,7 +557,7 @@ with col2:
         x=eje_x, 
         y=serie_2,
         mode='lines',  # Solo líneas, sin markers
-        name='1.1 World'
+        name='Benchmark'
     ))
 
     # Añadir marcador solo en la última fecha de la primera serie
@@ -566,7 +566,7 @@ with col2:
         y=[serie_1[-1]],  # Último valor de la primera serie
         mode='markers',  # Solo el marcador
         marker=dict(symbol='circle', size=8),  # Configurar el marcador como punto
-        name='Último Rendimiento Ajustado',  # Leyenda del marcador
+        name='Portfolio',  # Leyenda del marcador
         showlegend=False  # Ocultar de la leyenda
     ))
 
@@ -576,7 +576,7 @@ with col2:
         y=[serie_2[-1]],  # Último valor de la segunda serie
         mode='markers',  # Solo el marcador
         marker=dict(symbol='circle', size=8),  # Configurar el marcador como punto
-        name='Último 1.1 World',  # Leyenda del marcador
+        name='Benchmark',  # Leyenda del marcador
         showlegend=False  # Ocultar de la leyenda
     ))
 
@@ -598,7 +598,7 @@ with col2:
     fig.add_annotation(
         x=eje_x[-1],  # Última fecha
         y=serie_1[-1],  # Último valor de la serie 1
-        text=f"<b>{serie_1[-1]:.2f}</b>",  # Texto en negrita con el valor
+        text=f"<b>{serie_1[-1]:.3f}</b>",  # Texto en negrita con el valor
         showarrow=False,  # No mostrar la flecha
         xanchor='left',  # Colocar a la derecha del marcador
         yanchor='middle',
@@ -610,7 +610,7 @@ with col2:
     fig.add_annotation(
         x=eje_x[-1],  # Última fecha
         y=serie_2[-1],  # Último valor de la serie 2
-        text=f"<b>{serie_2[-1]:.2f}</b>",  # Texto en negrita con el valor
+        text=f"<b>{serie_2[-1]:.3f}</b>",  # Texto en negrita con el valor
         showarrow=False,  # No mostrar la flecha
         xanchor='left',  # Colocar a la derecha del marcador
         yanchor='middle',
@@ -618,7 +618,8 @@ with col2:
         font=dict(size=10)  # Reducir tamaño de la fuente
     )
 
-
+    fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="#FF8C00", width=3))  # Darker orange
+    fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="#4FB0C6", width=2))  # Soft sea blue
 
 
     st.plotly_chart(fig)
