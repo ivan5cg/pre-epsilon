@@ -454,7 +454,7 @@ with col2:
     btc_tz = pytz.timezone("Etc/UTC")
 
     # Define date range
-    fecha_inicio_ = datetime.now() - timedelta(2) 
+    fecha_inicio_ = datetime.now() - timedelta(3.5) 
     fecha_hoy_ = datetime.now(madrid_tz)  # Ensure current date is in Madrid timezone
     fecha_formateada = fecha_hoy_.strftime("%Y-%m-%d %H:%M:%S")
 
