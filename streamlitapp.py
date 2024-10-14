@@ -549,7 +549,7 @@ with col2:
         x=eje_x, 
         y=serie_1,
         mode='lines',  # Solo líneas, sin markers
-        name='Rendimientos Ajustados'
+        name='Portfolio'
     ))
 
     # Añadir segunda línea sin markers
@@ -557,7 +557,7 @@ with col2:
         x=eje_x, 
         y=serie_2,
         mode='lines',  # Solo líneas, sin markers
-        name='1.1 World'
+        name='Benchmark'
     ))
 
     # Añadir marcador solo en la última fecha de la primera serie
