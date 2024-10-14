@@ -548,16 +548,18 @@ with col2:
     fig.add_trace(go.Scatter(
         x=eje_x, 
         y=serie_1,
-        mode='lines',
-        name='Rendimientos Ajustados'
+        mode='lines+markers',  # Agregar markers a la línea
+        name='Rendimientos Ajustados',
+        marker=dict(symbol='circle', size=8)  # Configurar el marcador como punto (círculo)
     ))
 
     # Añadir segunda línea
     fig.add_trace(go.Scatter(
         x=eje_x, 
         y=serie_2,
-        mode='lines',
-        name='1.1 World'
+        mode='lines+markers',  # Agregar markers a la línea
+        name='1.1 World',
+        marker=dict(symbol='circle', size=8)  # Configurar el marcador como punto (círculo)
     ))
 
     # Configurar eje X con formato dd hh:mm
@@ -574,8 +576,28 @@ with col2:
         legend_title='Series'
     )
 
-    # Mostrar gráfico
-    st.plotly_chart(fig)
+    # Anotaciones para el valor final de la serie 1
+    fig.add_annotation(
+        x=eje_x[-1],  # Última fecha
+        y=serie_1[-1],  # Último valor de la serie 1
+        text=f"<b>{serie_1[-1]:.2f}</b>",  # Texto en negrita con el valor
+        showarrow=False,  # No mostrar la flecha
+        xanchor='left',  # Colocar a la derecha del marcador
+        yanchor='middle',
+        font=dict(size=12)  # Ajustar tamaño de la fuente
+    )
+
+    # Anotaciones para el valor final de la serie 2
+    fig.add_annotation(
+        x=eje_x[-1],  # Última fecha
+        y=serie_2[-1],  # Último valor de la serie 2
+        text=f"<b>{serie_2[-1]:.2f}</b>",  # Texto en negrita con el valor
+        showarrow=False,  # No mostrar la flecha
+        xanchor='left',  # Colocar a la derecha del marcador
+        yanchor='middle',
+        font=dict(size=12)  # Ajustar tamaño de la fuente
+    )
+
 
 
 
