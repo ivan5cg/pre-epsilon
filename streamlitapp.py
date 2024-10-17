@@ -1,20 +1,25 @@
-# Importing required libraries
-import yfinance as yf
-import pandas as pd
-import streamlit as st
 from pyxirr import xirr
-from datetime import datetime, timedelta
-from matplotlib import pyplot as plt, colors
-from scipy.stats import norm, stats
-from plotly.express import px
-import quantstats as qs
-import warnings 
-
-# Suppressing warnings
-warnings.filterwarnings('ignore')
-
+import streamlit as st
+import pandas as pd
+import yfinance as yf
+import numpy as np
+import pandas_datareader as reader
+#from scipy.stats import norm
+from datetime import datetime
+from datetime import timedelta
+from datetime import date
+import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
+import matplotlib
+import investpy as inv
 plt.style.use('default')
-
+import warnings 
+warnings.filterwarnings(action='ignore')
+import plotly.express as px
+import plotly.graph_objects as go
+import quantstats as qs
+from matplotlib import colors
+from scipy import stats
 
 is_dark_mode = st.get_option("theme.base") == "dark"
 
@@ -2176,10 +2181,3 @@ fig_hist.update_layout(
 st.plotly_chart(fig_hist, use_container_width=True)
 
 ################################
-
-
-
-
-
-
-
