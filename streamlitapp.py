@@ -1,25 +1,20 @@
-from pyxirr import xirr
-import streamlit as st
-import pandas as pd
+# Importing required libraries
 import yfinance as yf
-import numpy as np
-import pandas_datareader as reader
-#from scipy.stats import norm
-from datetime import datetime
-from datetime import timedelta
-from datetime import date
-import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter
-import matplotlib
-import investpy as inv
-plt.style.use('default')
-import warnings 
-warnings.filterwarnings(action='ignore')
-import plotly.express as px
-import plotly.graph_objects as go
+import pandas as pd
+import streamlit as st
+from pyxirr import xirr
+from datetime import datetime, timedelta
+from matplotlib import pyplot as plt, colors
+from scipy.stats import norm, stats
+from plotly.express import px
 import quantstats as qs
-from matplotlib import colors
-from scipy import stats
+import warnings 
+
+# Suppressing warnings
+warnings.filterwarnings('ignore')
+
+plt.style.use('default')
+
 
 is_dark_mode = st.get_option("theme.base") == "dark"
 
@@ -454,7 +449,7 @@ with col2:
     btc_tz = pytz.timezone("Etc/UTC")
 
     # Define date range
-    fecha_inicio_ = datetime.now() - timedelta(3.5) 
+    fecha_inicio_ = datetime.now() - timedelta(4) 
     fecha_hoy_ = datetime.now(madrid_tz)  # Ensure current date is in Madrid timezone
     fecha_formateada = fecha_hoy_.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -462,7 +457,7 @@ with col2:
     rango_fechas_ = pd.date_range(start=fecha_inicio_, end=fecha_formateada, freq='15T', tz=madrid_tz)
 
     # Filter time range to keep only between 08:00 and 23:00
-    rango_fechas_ = rango_fechas_[(rango_fechas_.hour >= 8) & (rango_fechas_.hour < 23)]
+    rango_fechas_ = rango_fechas_[(rango_fechas_.hour >= 9) & (rango_fechas_.hour < 22)]
 
     # Create an empty DataFrame for prices
     precios_iday = pd.DataFrame(index=rango_fechas_)
@@ -527,99 +522,39 @@ with col2:
     precios_iday.rename(columns=column_mapping_prices, inplace=True)
     precios_iday = precios_iday.sort_index(axis=1)
 
-    # Calculate returns
-    rendimientos_iday = (precios_iday / precios_iday.iloc[0])
-
-    import plotly.graph_objects as go
-
-    # Eje X (asumiendo que rendimientos_iday.index contiene las fechas)
+    # Calcular rendimientos y definir eje X
+    rendimientos_iday = precios_iday / precios_iday.iloc[0]
     eje_x = rendimientos_iday.index
 
-    # Serie 1: (rendimientos_iday * pesos).sum(axis=1)
-    serie_1 = (rendimientos_iday * pesos.loc[precios_iday.dropna().index[0].normalize().tz_localize(None)]).sum(axis=1)
+    # Rendimiento del portafolio y benchmark
+    serie_1 = (rendimientos_iday * pesos.loc[precios_iday.index[0].normalize().tz_localize(None)]).sum(axis=1) * 100
+    serie_2 = rendimientos_iday["1.1 World"] * 100
 
-    # Serie 2: rendimientos_iday["1.1 World"]
-    serie_2 = rendimientos_iday["1.1 World"]
+    # Crear la figura con ambas líneas y marcadores finales
+    fig = go.Figure([
+        go.Scatter(x=eje_x, y=serie_1, mode='lines', name='Portfolio', line=dict(color="#FF8C00", width=3)),
+        go.Scatter(x=eje_x, y=serie_2, mode='lines', name='Benchmark', line=dict(color="#4FB0C6", width=2)),
+        go.Scatter(x=[eje_x[-1]], y=[serie_1[-1]], mode='markers', marker=dict(symbol='circle', size=8, color="#FF8C00"), showlegend=False),
+        go.Scatter(x=[eje_x[-1]], y=[serie_2[-1]], mode='markers', marker=dict(symbol='circle', size=8, color="#4FB0C6"), showlegend=False)
+    ])
 
-    # Crear figura con las dos líneas
-    fig = go.Figure()
+    # Añadir anotaciones finales
+    for serie, color in zip([serie_1, serie_2], ['#FF8C00', '#4FB0C6']):
+        fig.add_annotation(x=eje_x[-1], y=serie[-1], text=f"<b>{serie[-1]:.2f}</b>", showarrow=False, xanchor='left', yanchor='middle', xshift=10, font=dict(size=10, color=color))
 
-    # Añadir primera línea sin markers
-    fig.add_trace(go.Scatter(
-        x=eje_x, 
-        y=serie_1,
-        mode='lines',  # Solo líneas, sin markers
-        name='Portfolio'
-    ))
+    # Añadir las líneas verticales a las 9:00 y 15:30
+    dias_unicos = eje_x.normalize().unique()
+    for dia in dias_unicos:
+        for hora in ["09:00", "15:30"]:
+            fecha_hora = pd.Timestamp(f"{dia.date()} {hora}").tz_localize('Europe/Madrid')
+            if fecha_hora >= eje_x.min() and fecha_hora <= eje_x.max():
+                fig.add_vline(x=fecha_hora, line_dash="dash", line_color="orange", line_width=0.5)
 
-    # Añadir segunda línea sin markers
-    fig.add_trace(go.Scatter(
-        x=eje_x, 
-        y=serie_2,
-        mode='lines',  # Solo líneas, sin markers
-        name='Benchmark'
-    ))
-
-    # Añadir marcador solo en la última fecha de la primera serie
-    fig.add_trace(go.Scatter(
-        x=[eje_x[-1]],  # Última fecha
-        y=[serie_1[-1]],  # Último valor de la primera serie
-        mode='markers',  # Solo el marcador
-        marker=dict(symbol='circle', size=8),  # Configurar el marcador como punto
-        name='Portfolio',  # Leyenda del marcador
-        showlegend=False  # Ocultar de la leyenda
-    ))
-
-    # Añadir marcador solo en la última fecha de la segunda serie
-    fig.add_trace(go.Scatter(
-        x=[eje_x[-1]],  # Última fecha
-        y=[serie_2[-1]],  # Último valor de la segunda serie
-        mode='markers',  # Solo el marcador
-        marker=dict(symbol='circle', size=8),  # Configurar el marcador como punto
-        name='Benchmark',  # Leyenda del marcador
-        showlegend=False  # Ocultar de la leyenda
-    ))
-
-    # Configurar eje X con formato dd/mm hh:mm
-    fig.update_xaxes(
-        tickformat='%d/%m %H:%M',  # Formato dd/mm hh:mm
-        title_text='Fecha (dd/mm hh:mm)'
-    )
-
-    # Configurar título y leyenda
+    # Configuración final
     fig.update_layout(
-        title='Comparación de Rendimientos',
-        xaxis_title='Fecha (dd/mm hh:mm)',
-        yaxis_title='Rendimiento',
-        legend_title='Series'
+        title='Comparación de Rendimientos', xaxis_title='Fecha', yaxis_title='Rendimiento', legend_title='Series',
+        xaxis=dict(tickformat="%H:%M",dtick=3600000*6,rangebreaks=[dict(bounds=[23, 9], pattern="hour")])  # Ocultar fuera de horario
     )
-
-    # Anotaciones para el valor final de la serie 1
-    fig.add_annotation(
-        x=eje_x[-1],  # Última fecha
-        y=serie_1[-1],  # Último valor de la serie 1
-        text=f"<b>{serie_1[-1]:.3f}</b>",  # Texto en negrita con el valor
-        showarrow=False,  # No mostrar la flecha
-        xanchor='left',  # Colocar a la derecha del marcador
-        yanchor='middle',
-        xshift=10,  # Desplazar texto a la derecha del marcador
-        font=dict(size=10)  # Reducir tamaño de la fuente
-    )
-
-    # Anotaciones para el valor final de la serie 2
-    fig.add_annotation(
-        x=eje_x[-1],  # Última fecha
-        y=serie_2[-1],  # Último valor de la serie 2
-        text=f"<b>{serie_2[-1]:.3f}</b>",  # Texto en negrita con el valor
-        showarrow=False,  # No mostrar la flecha
-        xanchor='left',  # Colocar a la derecha del marcador
-        yanchor='middle',
-        xshift=10,  # Desplazar texto a la derecha del marcador
-        font=dict(size=10)  # Reducir tamaño de la fuente
-    )
-
-    fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="#FF8C00", width=3))  # Darker orange
-    fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="#4FB0C6", width=2))  # Soft sea blue
 
 
     st.plotly_chart(fig)
