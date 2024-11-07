@@ -462,7 +462,7 @@ with col2:
     rango_fechas_ = pd.date_range(start=fecha_inicio_, end=fecha_formateada, freq='15T', tz=madrid_tz)
 
     # Filter time range to keep only between 08:00 and 23:00
-    rango_fechas_ = rango_fechas_[(rango_fechas_.hour >= 9) & (rango_fechas_.hour < 22)]
+    rango_fechas_ = rango_fechas_[(rango_fechas_.hour >= 9) & (rango_fechas_.hour < 22) & (rango_fechas_.dayofweek < 5)]
 
     # Create an empty DataFrame for prices
     precios_iday = pd.DataFrame(index=rango_fechas_)
@@ -556,10 +556,22 @@ with col2:
                 fig.add_vline(x=fecha_hora, line_dash="dash", line_color="orange", line_width=0.5)
 
     # Configuración final
+
     fig.update_layout(
-        title='Comparación de Rendimientos', xaxis_title='Fecha', yaxis_title='Rendimiento', legend_title='Series',
-        xaxis=dict(tickformat="%H:%M",dtick=3600000*6,rangebreaks=[dict(bounds=[23, 9], pattern="hour")])  # Ocultar fuera de horario
+        title='Comparación de Rendimientos',
+        xaxis_title='Fecha',
+        yaxis_title='Rendimiento',
+        legend_title='Series',
+        xaxis=dict(
+            tickformat="%a %H:%M",                # Formato de hora
+            dtick=3600000 * 6,                 # Intervalo de ticks cada 6 horas
+            rangebreaks=[
+                dict(bounds=[22, 9], pattern="hour"),   # Ocultar horas fuera de 9:00 - 23:00
+                dict(bounds=["sat", "mon"])             # Excluir fines de semana (sábado a lunes)
+            ]
+        )
     )
+
 
 
     st.plotly_chart(fig)
@@ -702,11 +714,27 @@ if frecuencia_opcion_seleccionada == "Semanal":
 
     if valor_opcion_seleccionada == "Total":
 
-        fig = px.line(pl.sum(axis=1).rename("Total").resample("W").last(),title='P/L de la cartera')
+        pl_semanal_total = pl.sum(axis=1).rename("Total").resample("W").last().diff()
+
+        fig = px.bar(pl_semanal_total,title='Gráfico de Línea',text=pl_semanal_total)
+
+        fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')  # Mostrar los valores encima de las barras
+        fig.update_layout(title='Gráfico de Barras con Valores Encima',
+                        xaxis_title='Fecha',
+                        yaxis_title='Valor')
+
+        ticktext = pl_semanal_total.index.strftime('W%V %b %y')
+        fig.update_xaxes(ticktext=ticktext, tickvals=pl_semanal_total.index)
+
+
+        fig.update_traces(texttemplate="<b>%{text:.2f}</b>", textposition='outside', 
+                        textfont_color=['green' if val >= 0 else 'red' for val in pl_semanal_total])
 
     elif valor_opcion_seleccionada == "Desglose":
 
         fig = px.line(pl.resample("W").last(),title='P/L de los valores')
+
+
 
 if frecuencia_opcion_seleccionada == "Mensual":
 
@@ -839,30 +867,20 @@ with col4:
     
     
     st.subheader("Stats")
-    
-    portfolio_metrics = pd.DataFrame(columns=[["CAGR"]],index=range(1))
+        
+    metrics = {
+        "CAGR": f"{qs.stats.cagr(rendimiento_portfolio):.2%}",
+        "Vol 6M": f"{qs.stats.rolling_volatility(rendimiento_portfolio, rolling_period=21*6).iloc[-1]:.2%}",
+        "Vol x": f"{(qs.stats.rolling_volatility(rendimiento_portfolio, rolling_period=21*6).iloc[-1] / qs.stats.rolling_volatility(benchmark, rolling_period=21*6).iloc[-1]):.2f}x",
+        "Alpha": f"{qs.stats.greeks(rendimiento_portfolio, benchmark)[1]:+.4f}",
+        "Beta": f"{qs.stats.greeks(rendimiento_portfolio, benchmark)[0]:.2f}",
+        "Best day": f"{qs.stats.best(rendimiento_portfolio):+.2%}",
+        "Worst day": f"{qs.stats.worst(rendimiento_portfolio):+.2%}",
+        "Drawdown": f"{qs.stats.to_drawdown_series(rendimiento_portfolio).iloc[-1]:.2%}",
+        "2 sigma fall": f"{qs.stats.cvar(rendimiento_portfolio, sigma=2):.2%}"
+    }
 
-    portfolio_metrics["CAGR"] = qs.stats.cagr(rendimiento_portfolio)   
-
-    portfolio_metrics["Vol 6M"] = qs.stats.rolling_volatility(rendimiento_portfolio,rolling_period=21*6).iloc[-1]
-
-    portfolio_metrics["Vol x"] = qs.stats.rolling_volatility(rendimiento_portfolio,rolling_period=21*6).iloc[-1] / qs.stats.rolling_volatility(benchmark,rolling_period=21*6).iloc[-1]
-
-    portfolio_metrics["Alpha"] = qs.stats.greeks(rendimiento_portfolio,benchmark)[1]
-
-    portfolio_metrics["Beta"] = qs.stats.greeks(rendimiento_portfolio,benchmark)[0]
-
-    portfolio_metrics["Best day"] = qs.stats.best(rendimiento_portfolio)
-
-    portfolio_metrics["Worst day"] = qs.stats.worst(rendimiento_portfolio)
-
-    portfolio_metrics["Drawdown"] = qs.stats.to_drawdown_series(rendimiento_portfolio).iloc[-1]
-
-    portfolio_metrics["2 sigma fall"] = qs.stats.cvar(rendimiento_portfolio,sigma=2)
-
-    portfolio_metrics = portfolio_metrics.round(4).T
-
-    portfolio_metrics.columns = ["Stats"]
+    portfolio_metrics = pd.DataFrame.from_dict(metrics, orient='index', columns=['Stats'])
 
     st.write(portfolio_metrics)
 
