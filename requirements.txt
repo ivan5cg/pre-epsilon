@@ -7,7 +7,7 @@ matplotlib
 datetime
 matplotlib
 investpy
-yfinance
+yfinance==0.2.24
 pandas_datareader
 ipython
 openpyxl
