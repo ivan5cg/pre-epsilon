@@ -120,6 +120,8 @@ def process_portfolio_data(opcion_seleccionada):
     for i in movimientos["Yahoo Ticker"].dropna().unique():
         precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Adj Close"]
 
+    st.write(precios)
+
     eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
 
     st.write (yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396)
