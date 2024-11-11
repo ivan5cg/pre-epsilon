@@ -116,21 +116,22 @@ def process_portfolio_data(opcion_seleccionada):
     rango_fechas = rango_fechas[rango_fechas.dayofweek < 5]
 
 
-    # 1. Primero descargamos todos los datos y luego construimos el DataFrame
-    precios_dict = {}
+    # 1. Establecemos el rango de fechas primero
+    fecha_hoy = datetime.now()
+    fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
+    rango_fechas = pd.date_range(fecha_inicio, fecha_formateada, freq='B')
+
+    # 2. Creamos el DataFrame con el índice de fechas
+    precios = pd.DataFrame(index=rango_fechas)
+
+    # 3. Ahora añadimos los datos columna por columna
     for ticker in movimientos["Yahoo Ticker"].dropna().unique():
         data = yf.download(ticker, start=fecha_inicio, progress=False)["Adj Close"]
         if not data.empty:
-            precios_dict[ticker] = data
+            precios[ticker] = data
 
-    # 2. Construimos el DataFrame a partir del diccionario
-    precios = pd.DataFrame(precios_dict)
-
-    # 3. Reindexamos para asegurar que tenemos todas las fechas laborables
-    fecha_hoy = datetime.now()
-    fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
-    idx = pd.date_range(fecha_inicio, fecha_formateada, freq='B')
-    precios = precios.reindex(idx)
+    # 4. Opcional: rellenamos los NaN si hay alguno
+    precios = precios.fillna(method='ffill')  # forward fill
 
     st.write(precios)
     
