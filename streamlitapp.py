@@ -115,39 +115,14 @@ def process_portfolio_data(opcion_seleccionada):
     rango_fechas = pd.date_range(fecha_inicio, end=fecha_formateada, freq="D")
     rango_fechas = rango_fechas[rango_fechas.dayofweek < 5]
 
-
-    # 1. Establecemos el rango de fechas primero
-    fecha_hoy = datetime.now()
-    fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
-    rango_fechas = pd.date_range(fecha_inicio, fecha_formateada, freq='B')
-
-    # 2. Creamos el DataFrame con el índice de fechas
+    # Download prices
     precios = pd.DataFrame(index=rango_fechas)
-
-    # 3. Ahora añadimos los datos columna por columna
-    for ticker in movimientos["Yahoo Ticker"].dropna().unique():
-        data = yf.download(ticker, start=fecha_inicio, progress=False)["Adj Close"]
-        if not data.empty:
-            precios[ticker] = data
-
-    # 4. Opcional: rellenamos los NaN si hay alguno
-    precios = precios.fillna(method='ffill')  # forward fill
-
-    st.write(precios)
-    
+    for i in movimientos["Yahoo Ticker"].dropna().unique():
+        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Adj Close"]
 
     eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
 
-    #st.write (yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396)
-             
-    #st.write(eurusd)
-
     precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396
-
-
-
-
-
     for ticker in ["JOE", "BN", "BAM"]:
         precios[ticker] = precios[ticker] / eurusd
 
