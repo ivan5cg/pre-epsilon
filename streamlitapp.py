@@ -115,7 +115,6 @@ def process_portfolio_data(opcion_seleccionada):
     rango_fechas = pd.date_range(fecha_inicio, end=fecha_formateada, freq="D")
     rango_fechas = rango_fechas[rango_fechas.dayofweek < 5]
 
-    st.write(rango_fechas)
 
     # Download prices
     precios = pd.DataFrame(index=rango_fechas,columns=movimientos["Yahoo Ticker"].dropna().unique())
