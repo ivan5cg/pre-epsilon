@@ -122,10 +122,16 @@ def process_portfolio_data(opcion_seleccionada):
 
     eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
 
-    print(yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396)
-    st.write(yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396)
+    st.write (yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396)
+             
+    st.write(eurusd)
 
     precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396
+
+
+
+
+
     for ticker in ["JOE", "BN", "BAM"]:
         precios[ticker] = precios[ticker] / eurusd
 
