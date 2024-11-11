@@ -124,7 +124,7 @@ def process_portfolio_data(opcion_seleccionada):
 
         st.write(data)
 
-    #st.write(precios)
+    st.write(precios)
 
     eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
 
