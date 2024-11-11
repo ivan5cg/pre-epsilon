@@ -2149,7 +2149,8 @@ st.plotly_chart(plot_simulation_results(simulaciones, anos_simulacion), use_cont
 
 # Calcular IRR para cada simulación usando fechas
 irrs = []
-start_date = datetime.now()
+start_date = datetime.now() 
+
 dias_simulacion = anos_simulacion *252
 fechas_simulacion = pd.bdate_range(start=start_date, periods=dias_simulacion).to_pydatetime().tolist()
 fecha_aportes  = generate_monthly_indices(anos_simulacion*252, datetime.now())
