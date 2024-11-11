@@ -118,7 +118,7 @@ def process_portfolio_data(opcion_seleccionada):
     st.write(rango_fechas)
 
     # Download prices
-    precios = pd.DataFrame(index=rango_fechas)
+    precios = pd.DataFrame(index=rango_fechas,columns=movimientos["Yahoo Ticker"].dropna().unique())
     st.write(precios)
 
     for i in movimientos["Yahoo Ticker"].dropna().unique():
