@@ -97,7 +97,7 @@ opcion_seleccionada = st.selectbox("Selecciona una opción", opciones)
 
 ## Procesamos toda la información que vamos a necesitar
 
-@st.cache_data(ttl=15*60)
+@st.cache_data(ttl=10*60)
 def process_portfolio_data(opcion_seleccionada):
     # Load and preprocess data
     movimientos = pd.read_excel("records.xlsx", parse_dates=True)
@@ -118,13 +118,28 @@ def process_portfolio_data(opcion_seleccionada):
     # Download prices
     precios = pd.DataFrame(index=rango_fechas)
     for i in movimientos["Yahoo Ticker"].dropna().unique():
-        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Adj Close"]
+        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Close"]
 
-    eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+    eurusd = 1/ yf.download("EUR=X", start=fecha_inicio, progress=False).resample("B").ffill()["Close"].squeeze()
+    btcusd = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Close"].squeeze()
 
-    precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396
+    if len(eurusd) == len(precios):
+        pass
+    else:
+        eurusd_today = yf.Ticker("EURUSD=X").info['regularMarketPrice']
+        eurusd_today = eurusd.iloc[-1]
+        fecha_hoy = datetime.now()
+        fecha_formateada = fecha_hoy.strftime("%Y-%m-%d")
+
+        eurusd = pd.concat([eurusd, pd.Series(eurusd_today, index=[pd.to_datetime(fecha_formateada)])])
+
+    precios["WBIT"] = btcusd.values / eurusd.values * 0.0002391
+
+
     for ticker in ["JOE", "BN", "BAM"]:
-        precios[ticker] = precios[ticker] / eurusd
+
+        precios[ticker] = precios[ticker] / eurusd.squeeze()
+
 
     precios = precios.fillna(method="ffill")
 
@@ -133,12 +148,12 @@ def process_portfolio_data(opcion_seleccionada):
         'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio',
         'ZPRV.DE': '1.3 USA Small Value', '0P0001AINF.F': '1.1 World', '0P0001AINL.F': '1.4 Emergentes',
         'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla',
-        'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
+        'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM',"ZPRX.DE": "1.2 Europa Small Value",
     }
 
     column_mapping_else = {'ETF monetario': '0.0 ETF monetario', 'Fondo monetario': '0.1 Fondo monetario', 'Uranio': '1.6 Uranio', 'USA Small Value': '1.3 USA Small Value', 'World': '1.1 World',
     'Emergentes': '1.4 Emergentes', 'Europa Small': '1.2 Europa Small', 'Brookfield Corp': '2.2 Brookfield Corp', 
-    'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM'
+    'St Joe': '2.3 St Joe', 'Tesla': '2.1 Tesla', 'ETF bitcoin': '1.5 ETF bitcoin', 'Brookfield AM': '2.4 Brookfield AM',"Europa Small Value": "1.2 Europa Small Value",
                         }
 
     precios.rename(columns=column_mapping_prices, inplace=True)
@@ -148,7 +163,7 @@ def process_portfolio_data(opcion_seleccionada):
     rendimientos = precios.pct_change()
 
     # Download and calculate benchmark returns
-    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False).resample("B").ffill()["Close"]
     rendimiento_benchmark = benchmark.pct_change().fillna(0)
 
     # Calculate positions
@@ -180,7 +195,7 @@ def process_portfolio_data(opcion_seleccionada):
 
     # Update movimientos
     movimientos.replace(column_mapping_else, inplace=True)
-    movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index]).cumsum()
+    movimientos["Ud sim benchmark"] = (-movimientos["Flow"] / benchmark.loc[movimientos.index].squeeze()).cumsum()
 
     return rendimientos, rendimiento_benchmark, posiciones, coste, movimientos, pesos, contribucion, pl,valor,benchmark,rendimiento_portfolio,precios
 
@@ -221,7 +236,7 @@ xirr_portfolio = xirr_portfolio * 100
 
 results = []
 
-valor_benchmark = movimientos["Ud sim benchmark"].groupby(level=0).last().reindex(precios.index, method='ffill') * benchmark
+valor_benchmark = movimientos["Ud sim benchmark"].groupby(level=0).last().reindex(precios.index, method='ffill') * benchmark.squeeze()
 
 for i in valor.index:
 
@@ -308,16 +323,16 @@ with col4:
 
 with col5:
 
-    st.write("2024")
+    st.write("2025")
 
-    return2024 = (((1+rendimiento_portfolio["2024"]).cumprod()-1).iloc[-1]*100).round(2)
+    return2025 = (((1+rendimiento_portfolio["2025"]).cumprod()-1).iloc[-1]*100).round(2)
 
-    if return2024 <= 0:
+    if return2025 <= 0:
           
-        st.subheader((f":red[{return2024} %]"))   
+        st.subheader((f":red[{return2025} %]"))   
 
     else:
-        st.subheader((f":green[{return2024} %]")) 
+        st.subheader((f":green[{return2025} %]")) 
 
 
 with col6:
@@ -364,7 +379,7 @@ from pyxirr import xirr
 xirr_df = pd.DataFrame(index=valor.index,columns=movimientos["Description"].unique())
 
 
-@st.cache_data(ttl=360)
+@st.cache_data(ttl=60*60)
 def compute_historic_irr(valor, movimientos):
     assets = movimientos["Description"].unique()
     dates = valor.index
@@ -419,6 +434,8 @@ tabla_resumen["Peso"] = pesos.iloc[-1] * 100
 tabla_resumen["P/L"] = pl.iloc[-1]
 tabla_resumen["P/L %"] = (valor/-coste - 1).iloc[-1] * 100
 tabla_resumen["IRR"] = xirr_df.iloc[-1] * 100
+
+tabla_resumen = tabla_resumen[tabla_resumen["Posiciones"] != 0]
 
 tabla_resumen = tabla_resumen.style.applymap(color_negativo_positivo_cero, subset=['P/L', 'P/L %', 'IRR']).format({
     'Posiciones': "{:.0f}",
@@ -481,27 +498,27 @@ with col2:
     for i in tickers_iday:
 
 
-        if i in ['U3O8.DE', 'ZPRV.DE', 'IWDA.AS', 'EUNM.DE', 'SMCX.MI','TL0.DE']:
+        if i in ['U3O8.DE', 'ZPRV.DE', 'IWDA.AS', 'EUNM.DE', 'SMCX.MI','TL0.DE', 'ZPRX.DE']:
 
             data = yf.download(i, start=fecha_inicio_, interval="15m", progress=False)
-            data = data.tz_localize(madrid_tz)  # Convert data to Madrid timezone
-            precios_iday[i] = data["Adj Close"].reindex(rango_fechas_, method="ffill")  # Resample and forward-fill missing data
+            fata = data.tz_convert(madrid_tz)  # Convert data to Madrid timezone
+            precios_iday[i] = data["Close"].reindex(rango_fechas_, method="ffill")  # Resample and forward-fill missing data
 
         if i in ['BAM', 'BN', 'JOE']:
 
             data = yf.download(i, start=fecha_inicio_, interval="15m", progress=False)
-            data = data.tz_localize(ny_tz) 
-            precios_iday[i] = data["Adj Close"].reindex(rango_fechas_, method="ffill")  # Resample and forward-fill missing data # Convert data to Madrid timezone
+            data = data.tz_convert(ny_tz) 
+            precios_iday[i] = data["Close"].reindex(rango_fechas_, method="ffill")  # Resample and forward-fill missing data # Convert data to Madrid timezone
 
     # Download EUR/USD exchange rate data (15-min intervals)
 
-    eurusd = yf.download("EURUSD=X", start=fecha_inicio_, interval="15m", progress=False)
-    eurusd = eurusd.tz_localize(ccy_tz).reindex(rango_fechas_, method="ffill")["Adj Close"]
+    eurusd = yf.download("EURUSD=X", start=fecha_inicio_, interval="15m", progress=False)["Close"].squeeze()
+    eurusd = eurusd.tz_convert(ccy_tz).reindex(rango_fechas_, method="ffill")
 
     # Download Bitcoin data (BTC-USD) and adjust for EUR/USD conversion
-    
-    btc_usd = yf.download("BTC-USD", start=fecha_inicio_, interval="15m", progress=False)
-    btc_usd = btc_usd.tz_localize(btc_tz).reindex(rango_fechas_, method="ffill")["Adj Close"]
+
+    btc_usd = yf.download("BTC-USD", start=fecha_inicio_, interval="15m", progress=False)["Close"].squeeze()
+    btc_usd = btc_usd.tz_convert(btc_tz).reindex(rango_fechas_, method="ffill")
     precios_iday["WBIT"] = btc_usd / eurusd * 0.0002396
 
     # Adjust other tickers for EUR/USD
@@ -519,9 +536,9 @@ with col2:
     # Rename columns
     column_mapping_prices = {
         'CSH2.PA': '0.0 ETF monetario', '0P00002BDB.F': '0.1 Fondo monetario', 'U3O8.DE': '1.6 Uranio',
-        'ZPRV.DE': '1.3 USA Small Value', 'IWDA.AS': '1.1 World', 'EUNM.DE': '1.4 Emergentes',
+        'ZPRV.DE': '1.3 USA Small Value', '0P0001AINF.F': '1.1 World', '0P0001AINL.F': '1.4 Emergentes',
         'SMCX.MI': '1.2 Europa Small', 'BN': '2.2 Brookfield Corp', 'JOE': '2.3 St Joe', 'TL0.DE': '2.1 Tesla',
-        'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM'
+        'WBIT': '1.5 ETF bitcoin', 'BAM': '2.4 Brookfield AM',"ZPRX.DE": "1.2 Europa Small Value","IWDA.AS": "1.1 World","EUNM.DE": "1.4 Emergentes",
     }
 
     precios_iday.rename(columns=column_mapping_prices, inplace=True)
@@ -533,6 +550,7 @@ with col2:
 
     # Rendimiento del portafolio y benchmark
     serie_1 = (rendimientos_iday * pesos.loc[precios_iday.index[0].normalize().tz_localize(None)]).sum(axis=1) * 100
+
     serie_2 = rendimientos_iday["1.1 World"] * 100
 
     # Crear la figura con ambas líneas y marcadores finales
@@ -593,9 +611,12 @@ def update_dates(days):
     st.session_state.end_date = datetime.now()
     st.session_state.start_date = st.session_state.end_date - timedelta(days=days)
 
+
+## 2024 to date
 def update_year_to_date():
     st.session_state.end_date = datetime.now()
-    st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
+    #st.session_state.start_date = datetime(st.session_state.end_date.year, 1, 1)
+    st.session_state.start_date = datetime(2025, 1, 1)
 
 
 #with col5:
@@ -625,7 +646,7 @@ with col3:
 with col4:
     st.text(" ")
     st.text(" ")
-    if st.button('Year to Date'):
+    if st.button('2025 to Date'):
         update_year_to_date()
 
 if opcion_seleccionada == "Omite monetarios":
@@ -654,7 +675,15 @@ growthline_portfolio = (1+vsBench[st.session_state.start_date:st.session_state.e
 
 growthline_portfolio = growthline_portfolio/growthline_portfolio.iloc[0]
 
-fig = px.line(growthline_portfolio, title='Evolución índice cartera')
+fig = px.line(100*growthline_portfolio, title='Evolución índice cartera')
+
+# Personalizar el gráfico
+fig.update_layout(
+    xaxis_title="Fecha",
+    yaxis_title="Rendimiento Compuesto",
+    legend_title="Grupo",
+    hovermode="x unified"
+)
 
 # Update line colors and widths
 fig.update_traces(selector=dict(name="Portfolio"), line=dict(color="#FF8C00", width=3))  # Darker orange
@@ -672,6 +701,96 @@ for date in tickvals:
     fig.add_vline(x=date, line=dict(color='white', width=0.25))
 
 st.plotly_chart(fig,use_container_width=True)
+
+
+
+# Nuevos grupos
+fondos_indices = rendimientos[['1.1 World', '1.2 Europa Small', '1.3 USA Small Value', '1.4 Emergentes', '1.5 ETF bitcoin',"1.2 Europa Small Value"]]
+acciones = rendimientos[['2.1 Tesla', '2.2 Brookfield Corp', '2.3 St Joe', '2.4 Brookfield AM']]
+bitcoin = rendimientos[['1.5 ETF bitcoin']]
+
+pesos_fondos = pesos[['1.1 World', '1.2 Europa Small', '1.3 USA Small Value', '1.4 Emergentes', '1.5 ETF bitcoin',"1.2 Europa Small Value"]]
+pesos_acciones = pesos[['2.1 Tesla', '2.2 Brookfield Corp', '2.3 St Joe', '2.4 Brookfield AM']]
+pesos_bitcoin = pesos[['1.5 ETF bitcoin']]
+
+# Recalcular pesos normalizados para cada grupo
+pesos_fondos_normalizados = pesos_fondos.div(pesos_fondos.sum(axis=1), axis=0)
+pesos_acciones_normalizados = pesos_acciones.div(pesos_acciones.sum(axis=1), axis=0)
+pesos_bitcoin_normalizados = pesos_bitcoin.div(pesos_bitcoin.sum(axis=1), axis=0)  # Aunque es solo uno, lo mantenemos consistente.
+
+# Cálculo de rendimientos compuestos
+rendimientos_fondos = (fondos_indices * pesos_fondos_normalizados).sum(axis=1)
+rendimientos_acciones = (acciones * pesos_acciones_normalizados).sum(axis=1)
+rendimientos_bitcoin = (bitcoin * pesos_bitcoin_normalizados).sum(axis=1)
+
+
+# Rendimientos compuestos
+evolucion_fondos = (1 + rendimientos_fondos[st.session_state.start_date:st.session_state.end_date]).cumprod()
+evolucion_acciones = (1 + rendimientos_acciones[st.session_state.start_date:st.session_state.end_date]).cumprod()
+evolucion_bitcoin = (1 + rendimientos_bitcoin[st.session_state.start_date:st.session_state.end_date]).cumprod()
+evolucion_benchmark = (1 + rendimiento_benchmark[st.session_state.start_date:st.session_state.end_date]).cumprod()
+
+evolucion_fondos = evolucion_fondos/evolucion_fondos.iloc[0]
+evolucion_acciones = evolucion_acciones/evolucion_acciones.iloc[0]
+evolucion_bitcoin = evolucion_bitcoin/evolucion_bitcoin.iloc[0]
+evolucion_benchmark = evolucion_benchmark/evolucion_benchmark.iloc[0]
+
+
+# Crear un DataFrame combinado con las cuatro series
+evoluciones = pd.DataFrame({
+    "Fecha": evolucion_fondos.index,
+    "Fondos Índice": evolucion_fondos.values,
+    "Acciones": evolucion_acciones.values,
+    "Bitcoin": evolucion_bitcoin.values,
+    "Benchmark": evolucion_benchmark.squeeze().values  # Añadimos el benchmark
+})
+
+
+# Convertir el índice en columna si no está explícito como "Fecha"
+evoluciones.set_index("Fecha", inplace=True)
+
+# Convertir el DataFrame al formato largo para usar con Plotly Express
+evoluciones_long = (100*evoluciones).reset_index().melt(id_vars="Fecha", var_name="Grupo", value_name="Evolución")
+
+# Graficar con Plotly
+fig = px.line(
+    evoluciones_long,
+    x="Fecha",
+    y="Evolución",
+    color="Grupo",
+    title="Evolución Compuesta de Fondos Índice, Acciones, Bitcoin y Benchmark",
+    labels={"Evolución": "Rendimiento Compuesto", "Fecha": "Fecha", "Grupo": "Grupo de Activos"}
+)
+
+# Personalizar el gráfico
+fig.update_layout(
+       xaxis_title="Fecha",
+    yaxis_title="Rendimiento Compuesto",
+    legend_title="Grupo",
+    hovermode="x unified"
+)
+
+# Personalizar colores y estilos de líneas
+fig.update_traces(selector=dict(name="Fondos Índice"), line=dict(color="#1F77B4", width=3))  # Azul para fondos índice
+fig.update_traces(selector=dict(name="Acciones"), line=dict(color="#2CA02C", width=3))  # Verde para acciones
+fig.update_traces(selector=dict(name="Bitcoin"), line=dict(color="#FF8C00", width=3))  # Naranja oscuro para Bitcoin
+fig.update_traces(selector=dict(name="Benchmark"), line=dict(color="#4FB0C6", width=2))  # Azul claro para el benchmark
+
+tickvals = growthline_portfolio.index[::5]
+ticktext = growthline_portfolio.index[::5].strftime('%d %b %y')
+
+fig.update_xaxes(ticktext=ticktext, tickvals=tickvals)
+
+fig.update_xaxes(
+    rangebreaks=[dict(bounds=["sat", "mon"])])
+
+for date in tickvals:
+    fig.add_vline(x=date, line=dict(color='white', width=0.25))
+
+# Mostrar el gráfico
+st.plotly_chart(fig,use_container_width=True, title='Evolución grupos de activos')
+
+
 
 
 st.divider()
@@ -702,76 +821,104 @@ with col2:
 
 if frecuencia_opcion_seleccionada == "Diaria":
 
-    if valor_opcion_seleccionada == "Total":
+    col1, col2 = st.columns(2)
 
-        fig = px.line(pl.sum(axis=1).rename("Total"),title='P/L de la cartera')
+    with col1:
+        if valor_opcion_seleccionada == "Total":
+            fig = px.line(pl.sum(axis=1).rename("Total"),title='P/L de la cartera')
+        elif valor_opcion_seleccionada == "Desglose":
+            fig = px.line(pl,title='P/L de los valores')
+        
+        st.plotly_chart(fig, use_container_width=True,key="g1")
 
-    elif valor_opcion_seleccionada == "Desglose":
-
-        fig = px.line(pl,title='P/L de los valores')
+    with col2:
+        fig = px.area(valor.sum(axis=1), title='Valor total de la cartera')
+        st.plotly_chart(fig, use_container_width=True,key="g2")
 
 if frecuencia_opcion_seleccionada == "Semanal":
 
-    if valor_opcion_seleccionada == "Total":
+    col1, col2 = st.columns(2)
 
-        pl_semanal_total = pl.sum(axis=1).rename("Total").resample("W").last().diff()
+    with col1:
+        if valor_opcion_seleccionada == "Total":
+            pl_semanal_total = pl.sum(axis=1).rename("Total").resample("W").last().diff()
 
-        fig = px.bar(pl_semanal_total,title='Gráfico de Línea',text=pl_semanal_total)
+            fig = px.bar(pl_semanal_total,title='P/L de la cartera',text=pl_semanal_total)
 
-        fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')  # Mostrar los valores encima de las barras
-        fig.update_layout(title='Gráfico de Barras con Valores Encima',
-                        xaxis_title='Fecha',
-                        yaxis_title='Valor')
+            fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')  
+            fig.update_layout(title='P/L de la cartera',
+                            xaxis_title='Fecha',
+                            yaxis_title='Valor')
 
-        ticktext = pl_semanal_total.index.strftime('W%V %b %y')
-        fig.update_xaxes(ticktext=ticktext, tickvals=pl_semanal_total.index)
+            ticktext = pl_semanal_total.index.strftime('W%V %b %y')
+            fig.update_xaxes(ticktext=ticktext, tickvals=pl_semanal_total.index)
 
+            fig.update_traces(texttemplate="<b>%{text:.2f}</b>", textposition='outside', 
+                            textfont_color=['green' if val >= 0 else 'red' for val in pl_semanal_total])
 
-        fig.update_traces(texttemplate="<b>%{text:.2f}</b>", textposition='outside', 
-                        textfont_color=['green' if val >= 0 else 'red' for val in pl_semanal_total])
+        elif valor_opcion_seleccionada == "Desglose":
+            fig = px.line(pl.resample("W").last(),title='P/L de los valores',key="g3")
+        
+        st.plotly_chart(fig, use_container_width=True)
 
-    elif valor_opcion_seleccionada == "Desglose":
+    with col2:
+        valor_semanal = valor.sum(axis=1).resample("W").last()/1000
+        fig = px.bar(valor_semanal, title='Valor total de la cartera', text=valor_semanal)
 
-        fig = px.line(pl.resample("W").last(),title='P/L de los valores')
+        # Format text to show thousands with dot separator and 1 decimal
+        fig.update_traces(
+            texttemplate='%{text:,.1f}', 
+            textposition='outside',
+            textfont=dict(size=10)
+        )
 
-
+        st.plotly_chart(fig, use_container_width=True, key="g4")
 
 if frecuencia_opcion_seleccionada == "Mensual":
 
-    if valor_opcion_seleccionada == "Total":
+    col1, col2 = st.columns(2)
 
-        pl_mensual_total = pl.sum(axis=1).rename("Total").resample("M").last().diff()
+    with col1:
+        if valor_opcion_seleccionada == "Total":
+            pl_mensual_total = pl.sum(axis=1).rename("Total").resample("M").last().diff()
 
-        fig = px.bar(pl_mensual_total,title='Gráfico de Línea',text=pl_mensual_total)
+            fig = px.bar(pl_mensual_total,title='Valor de cartera',text=pl_mensual_total)
 
-        fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')  # Mostrar los valores encima de las barras
-        fig.update_layout(title='Gráfico de Barras con Valores Encima',
-                        xaxis_title='Fecha',
-                        yaxis_title='Valor')
+            fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+            fig.update_layout(title='P/L de la cartera',
+                            xaxis_title='Fecha',
+                            yaxis_title='Valor')
 
-        ticktext = pl_mensual_total.index.strftime('%b %y')
-        fig.update_xaxes(ticktext=ticktext, tickvals=pl_mensual_total.index)
+            ticktext = pl_mensual_total.index.strftime('%b %y')
+            fig.update_xaxes(ticktext=ticktext, tickvals=pl_mensual_total.index)
+
+            fig.update_traces(texttemplate="<b>%{text:.2f}</b>", textposition='outside', 
+                            textfont_color=['green' if val >= 0 else 'red' for val in pl_mensual_total])
+
+        elif valor_opcion_seleccionada == "Desglose":
+            fig = px.bar(pl.resample("M").last().diff(),title='P/L de los valores',key="g5")
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        valor_mensual = valor.sum(axis=1).resample("M").last()/1000
+        fig = px.bar(valor_mensual, title='Valor de cartera', text=valor_mensual)
+        
+        # Format text to show thousands with dot separator and 1 decimal
+        fig.update_traces(
+            texttemplate='%{text:,.1f}', 
+            textposition='outside',
+            textfont=dict(size=10)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, key="g6")
 
 
-        fig.update_traces(texttemplate="<b>%{text:.2f}</b>", textposition='outside', 
-                        textfont_color=['green' if val >= 0 else 'red' for val in pl_mensual_total])
-
-
-
-    elif valor_opcion_seleccionada == "Desglose":
-
-        #pl_mensual_desglose = pl.resample("M").last().diff()
-
-        fig = px.bar(pl.resample("M").last().diff(),title='P/L de los valores')
-
-        ticktext = pl.resample("M").last().index.strftime('%b %y')
-        fig.update_xaxes(ticktext=ticktext, tickvals=pl.resample("M").last().index)
-
-
+st.divider()
 
 #fig = px.line(pl.sum(axis=1).rename("tr"),title='Gráfico de Línea')
 
-st.plotly_chart(fig,use_container_width=True)
+#st.plotly_chart(fig,use_container_width=True)
 
 
 
@@ -802,6 +949,8 @@ st.plotly_chart(fig,use_container_width=True)
 
 st.divider()
 
+posiciones_cerradas = posiciones.loc[:, posiciones.iloc[-1] == 0].columns.tolist()
+
 
 col1, col2,col3,col4 = st.columns(4)
 
@@ -811,6 +960,8 @@ with col1:
     st.subheader("P/L")
 
     pl_assets = pl.diff().tail(1).T.round(2)
+
+    pl_assets = pl_assets[~pl_assets.index.isin(posiciones_cerradas)]
 
     pl_assets = pl_assets.sort_values(by=pl_assets.columns[0],ascending=False)
 
@@ -835,6 +986,8 @@ with col2:
 
     chg_assets = ((rendimientos.tail(1).T)).round(6)
 
+    chg_assets = chg_assets[~chg_assets.index.isin(posiciones_cerradas)]
+
     chg_assets = chg_assets.sort_values(by=chg_assets.columns[0],ascending=False)
 
     chg_assets.columns = ["Hoy"]
@@ -852,6 +1005,8 @@ with col3:
 
     valor_cartera = valor.round(0).iloc[-1]
     valor_cartera = valor_cartera.rename("Valor")
+
+    valor_cartera = valor_cartera[valor_cartera > 0] 
 
     valor_cartera = pd.DataFrame(valor_cartera).sort_values(by="Valor",ascending=False)
 
@@ -871,7 +1026,7 @@ with col4:
     metrics = {
         "CAGR": f"{qs.stats.cagr(rendimiento_portfolio):.2%}",
         "Vol 6M": f"{qs.stats.rolling_volatility(rendimiento_portfolio, rolling_period=21*6).iloc[-1]:.2%}",
-        "Vol x": f"{(qs.stats.rolling_volatility(rendimiento_portfolio, rolling_period=21*6).iloc[-1] / qs.stats.rolling_volatility(benchmark, rolling_period=21*6).iloc[-1]):.2f}x",
+        "Vol x": f"{(qs.stats.rolling_volatility(rendimiento_portfolio, rolling_period=21*6).iloc[-1] / qs.stats.rolling_volatility(benchmark, rolling_period=21*6).iloc[-1].values[0]):.2f}x",
         "Alpha": f"{qs.stats.greeks(rendimiento_portfolio, benchmark)[1]:+.4f}",
         "Beta": f"{qs.stats.greeks(rendimiento_portfolio, benchmark)[0]:.2f}",
         "Best day": f"{qs.stats.best(rendimiento_portfolio):+.2%}",
@@ -1075,7 +1230,9 @@ st.write(pl_df.style.pipe(lambda x: x.applymap(color_negativo_positivo_cero)).fo
     '2.1 Tesla': "{:.0f}€",
     '2.2 Brookfield Corp': "{:.0f}€",
     '2.3 St Joe': "{:.0f}€",
-    '2.4 Brookfield AM': "{:.0f}€"
+    '2.4 Brookfield AM': "{:.0f}€",
+    "1.2 Europa Small Value": "{:.0f}€",
+
 }))
 
 
@@ -1543,13 +1700,13 @@ valor_df.columns = ["Hoy"]
 valor_stocks = valor_df.loc[["2.3 St Joe","2.4 Brookfield AM","2.2 Brookfield Corp","2.1 Tesla"],:]
 #valor_stocks = valor_stocks.divide(valor_stocks.sum())
 
-valor_indices = valor_df.loc[["1.1 World","1.2 Europa Small","1.3 USA Small Value","1.4 Emergentes","1.6 Uranio"],:]
+valor_indices = valor_df.loc[["1.1 World","1.2 Europa Small","1.3 USA Small Value","1.4 Emergentes","1.6 Uranio","1.2 Europa Small Value"],:]
 #valor_indices = valor_indices.divide(valor_indices.sum())
 
 
 if opcion_seleccionada != "Omite monetarios":
 
-    valor_indices_cat = valor_df.loc[["1.1 World","1.2 Europa Small","1.3 USA Small Value","1.4 Emergentes","1.6 Uranio"],:].sum()
+    valor_indices_cat = valor_df.loc[["1.1 World","1.2 Europa Small","1.3 USA Small Value","1.4 Emergentes","1.6 Uranio","1.2 Europa Small Value"],:].sum()
 
     valor_stocks_cat = valor_df.loc[["2.3 St Joe","2.4 Brookfield AM","2.2 Brookfield Corp","2.1 Tesla"],:].sum()
 
@@ -1562,7 +1719,7 @@ if opcion_seleccionada != "Omite monetarios":
 
 else:
 
-    valor_indices_cat = valor_df.loc[["1.1 World","1.2 Europa Small","1.3 USA Small Value","1.4 Emergentes","1.6 Uranio"],:].sum()
+    valor_indices_cat = valor_df.loc[["1.1 World","1.2 Europa Small","1.3 USA Small Value","1.4 Emergentes","1.6 Uranio","1.2 Europa Small Value"],:].sum()
 
     valor_stocks_cat = valor_df.loc[["2.3 St Joe","2.4 Brookfield AM","2.2 Brookfield Corp","2.1 Tesla"],:].sum()
 
@@ -1588,10 +1745,10 @@ fig.update_layout(title_text="Multiple Pie Charts",
                   # Use 'grid' to arrange in grid, 'horizontal' or 'vertical' for horizontal or vertical arrangement
                   grid=dict(rows=2, columns=2), 
                   # Annotations help to give title to individual pie chart
-                  annotations=[dict(text='Cartera', x=-0.10, y=1.0, font_size=17, showarrow=False),
+                  annotations=[dict(text='Cartera', x=0.05, y=1.0, font_size=17, showarrow=False),
                                dict(text='Categorías', x=0.55, y=1.0, font_size=17, showarrow=False),
-                               dict(text='Índices', x=-0.10, y=0.4, font_size=17, showarrow=False),
-                               dict(text='Stocks', x=0.55, y=0.4, font_size=17, showarrow=False)], showlegend=True,width=1300,height=1000)
+                               dict(text='Índices', x=0.05, y=0.4, font_size=17, showarrow=False),
+                               dict(text='Stocks', x=0.55, y=0.4, font_size=17, showarrow=False)], showlegend=True,width=1000,height=1000)
 
 
 
@@ -1748,7 +1905,6 @@ st.plotly_chart(fig,use_container_width=True)
 
 st.divider()
 
-
 fig = qs.plots.snapshot(rendimiento_portfolio,show=False,figsize=(8,8))
 
 st.pyplot(fig)
@@ -1810,6 +1966,7 @@ def load_asset_expectations() -> Dict[str, Dict[str, float]]:
             '2.2 Brookfield Corp': {'retorno': 0.11, 'volatilidad': 0.22},
             '2.3 St Joe': {'retorno': 0.09, 'volatilidad': 0.20},
             '2.4 Brookfield AM': {'retorno': 0.10, 'volatilidad': 0.21},
+            "1.2 Europa Small Value": {'retorno': 0.085, 'volatilidad': 0.20},  
         }
     return st.session_state.asset_expectations
 
@@ -2149,8 +2306,7 @@ st.plotly_chart(plot_simulation_results(simulaciones, anos_simulacion), use_cont
 
 # Calcular IRR para cada simulación usando fechas
 irrs = []
-start_date = datetime.now() 
-
+start_date = datetime.now()
 dias_simulacion = anos_simulacion *252
 fechas_simulacion = pd.bdate_range(start=start_date, periods=dias_simulacion).to_pydatetime().tolist()
 fecha_aportes  = generate_monthly_indices(anos_simulacion*252, datetime.now())
