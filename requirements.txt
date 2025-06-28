@@ -7,7 +7,7 @@ matplotlib
 datetime
 matplotlib
 investpy
-yfinance==0.2.24
+yfinance==0.2.58
 pandas_datareader
 ipython
 openpyxl
@@ -15,3 +15,4 @@ mplfinance
 plotly
 quantstats
 pyxirr
+
