@@ -270,99 +270,102 @@ xirr_benchmark = xirr_benchmark * 100
 
 ### primeros indicadores
 
+st.markdown("""
+<style>
+    .kpi-card {
+        background-color: #1E1E1E;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 15px 5px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        border-color: #444;
+    }
+    .kpi-label {
+        font-size: 0.8rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .kpi-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #FFF;
+    }
+    .kpi-unit {
+        font-size: 0.9rem;
+        color: #666;
+        margin-left: 2px;
+        font-weight: 500;
+    }
+    .val-pos { color: #4CAF50; }
+    .val-neg { color: #FF5252; }
+    .val-neu { color: #B0BEC5; }
+</style>
+""", unsafe_allow_html=True)
+
+def render_kpi(label, value, unit="", color_val=None, is_currency=False):
+    color_class = "val-neu"
+    if color_val is not None:
+        if color_val > 0:
+            color_class = "val-pos"
+        elif color_val < 0:
+            color_class = "val-neg"
+    
+    if is_currency:
+        display_val = f"{value:,.0f}".replace(",", ".")
+    else:
+        display_val = f"{value}"
+
+    return f"""
+    <div class="kpi-card">
+        <div class="kpi-label">{label}</div>
+        <div class="kpi-value {color_class}">
+            {display_val}<span class="kpi-unit">{unit}</span>
+        </div>
+    </div>
+    """
+
 col1, col2, col3, col4, col5,col6,col7 = st.columns(7)
 
-
 with col1:
-   st.write("  Valor")
-   st.subheader(str(int(valor.sum(axis=1).iloc[-2])))
-
+   val = int(valor.sum(axis=1).iloc[-2])
+   st.markdown(render_kpi("Valor", val, "€", None, is_currency=True), unsafe_allow_html=True)
 
 with col2:
-   st.write("P/L hoy")
-
    pl_today = int(pl.sum(axis=1).diff().iloc[-1])
-    
-   pl_today_text = '{:,.0f} €'.format(int(pl.sum(axis=1).diff().iloc[-1]))
-
-   if pl_today <= 0:
-          
-        st.subheader((f":red[{pl_today_text}]"))   
-
-   else:
-        st.subheader((f":green[{pl_today_text}]")) 
-
+   st.markdown(render_kpi("P/L hoy", pl_today, "€", pl_today, is_currency=True), unsafe_allow_html=True)
 
 with col3:
-
-    st.write("Hoy")
-
     returnhoy = (rendimiento_portfolio.iloc[-1]*100).round(2)
-
-    if returnhoy <= 0:
-          
-        st.subheader((f":red[{returnhoy} %]"))   
-
-    else:
-        st.subheader((f":green[{returnhoy} %]")) 
-
+    st.markdown(render_kpi("Hoy", returnhoy, "%", returnhoy), unsafe_allow_html=True)
 
 with col4:
-
-    st.write("P/L %")
-
     pl_cartera = (((valor.sum(axis=1) / -coste.sum(axis=1)).iloc[-1] - 1)*100).round(2)
-
-    if pl_cartera <= 0:
-          
-        st.subheader((f":red[{pl_cartera} %]"))   
-
-    else:
-        st.subheader((f":green[{pl_cartera} %]")) 
-
+    st.markdown(render_kpi("P/L %", pl_cartera, "%", pl_cartera), unsafe_allow_html=True)
 
 with col5:
-
-    st.write("2025")
-
-    return2025 = (((1+rendimiento_portfolio["2025"]).cumprod()-1).iloc[-1]*100).round(2)
-
-    if return2025 <= 0:
-          
-        st.subheader((f":red[{return2025} %]"))   
-
-    else:
-        st.subheader((f":green[{return2025} %]")) 
-
+    try:
+        return2025 = (((1+rendimiento_portfolio["2025"]).cumprod()-1).iloc[-1]*100).round(2)
+    except:
+        return2025 = 0.0
+    st.markdown(render_kpi("2025", return2025, "%", return2025), unsafe_allow_html=True)
 
 with col6:
-
-    st.write("IRR")
-
     xirr_portfolio_ = xirr_portfolio.iloc[-1].round(2).values[0]
-
-    if xirr_portfolio_ <= 0:
-          
-        st.subheader((f":red[{xirr_portfolio_} %]"))   
-
-    else:
-        st.subheader((f":green[{xirr_portfolio_} %]")) 
-
+    st.markdown(render_kpi("IRR", xirr_portfolio_, "%", xirr_portfolio_), unsafe_allow_html=True)
 
 with col7:
-
-    st.write("IRR delta")
-
     gap = xirr_portfolio.iloc[-1].round(2).values[0] - xirr_benchmark.iloc[-1].round(2).values[0]
-
     gap = gap.round(2)
-
-    if gap <= 0:
-          
-        st.subheader((f":red[{gap} %]"))   
-
-    else:
-        st.subheader((f":green[{gap} %]")) 
+    st.markdown(render_kpi("IRR delta", gap, "%", gap), unsafe_allow_html=True)
 
 
 
