@@ -522,18 +522,18 @@ with col2:
 
 with col3:
     returnhoy = (rendimiento_portfolio.iloc[-1]*100).round(2)
-    st.markdown(render_kpi("Hoy", returnhoy, "%", returnhoy), unsafe_allow_html=True)
+    st.markdown(render_kpi("Hoy", returnhoy, "%", returnhoy,decimals=2), unsafe_allow_html=True)
 
 with col4:
     pl_cartera = (((valor.sum(axis=1) / -coste.sum(axis=1)).iloc[-1] - 1)*100).round(2)
-    st.markdown(render_kpi("P/L %", pl_cartera, "%", pl_cartera), unsafe_allow_html=True)
+    st.markdown(render_kpi("P/L %", pl_cartera, "%", pl_cartera,decimals=2), unsafe_allow_html=True)
 
 with col5:
     try:
         return2025 = (((1+rendimiento_portfolio["2025"]).cumprod()-1).iloc[-1]*100).round(2)
     except:
         return2025 = 0.0
-    st.markdown(render_kpi("2025", return2025, "%", return2025), unsafe_allow_html=True)
+    st.markdown(render_kpi("2025", return2025, "%", return2025,decimals=2), unsafe_allow_html=True)
 
 with col6:
     xirr_portfolio_ = xirr_portfolio.iloc[-1].round(2).values[0]
