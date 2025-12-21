@@ -23,19 +23,103 @@ from scipy import stats
 
 st.markdown("""
 <style>
-    /* Fondo global estilo Bloomberg */
-    .stApp {
-        background-color: #0A0E27;
-    }
-    
-    /* Títulos estilo Bloomberg */
-    h1, h2, h3 {
-        color: #FF8C00 !important;
-        font-family: 'Roboto Mono', monospace !important;
-        font-weight: 700 !important;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+
+/* =========================
+   FONDO GLOBAL – NEGRO PURO
+   ========================= */
+.stApp {
+    background-color: #000000;
+    color: #eaeaea;
+    font-family: 'Roboto Mono', monospace;
+}
+
+/* Elimina fondos azules/grises internos */
+section[data-testid="stSidebar"],
+div[data-testid="stHeader"],
+div[data-testid="stToolbar"],
+div[data-testid="stDecoration"],
+div[data-testid="stStatusWidget"] {
+    background: #000000 !important;
+}
+
+/* Contenedores y bloques */
+div[data-testid="stVerticalBlock"],
+div[data-testid="stHorizontalBlock"],
+div[data-testid="stContainer"] {
+    background: transparent !important;
+}
+
+/* =========================
+   TÍTULOS – ESTILO BBG
+   ========================= */
+h1 {
+    color: #ff8c00 !important;
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em;
+}
+
+h2 {
+    color: #ffb000 !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.04em;
+}
+
+h3 {
+    color: #eaeaea !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+}
+
+/* =========================
+   TEXTO NORMAL
+   ========================= */
+p, span, div {
+    color: #eaeaea;
+}
+
+/* =========================
+   LINKS (muy discretos)
+   ========================= */
+a {
+    color: #00d9ff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* =========================
+   SIDEBAR (terminal-like)
+   ========================= */
+section[data-testid="stSidebar"] {
+    border-right: 1px solid #2a2a2a;
+}
+
+/* =========================
+   SCROLLBAR (opcional)
+   ========================= */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #444444;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 is_dark_mode = st.get_option("theme.base") == "dark"
 
