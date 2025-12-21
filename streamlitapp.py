@@ -124,64 +124,103 @@ section[data-testid="stSidebar"] {
 is_dark_mode = st.get_option("theme.base") == "dark"
 
 def color_negativo_positivo_cero(val):
-    #val = round(val, 2)  # Redondear el valor a dos decimales
-    color = 'black'  # Color predeterminado para valores diferentes de cero
+    # val = round(val, 2) # Opcional: Redondear
+    
+    # Colores estilo Bloomberg (High Contrast)
+    # Verde Terminal (#00FF00) para subidas
+    # Rojo Brillante (#FF0000) para bajadas
+    # Ámbar (#FF9800) o Gris claro para neutros
+    
+    color = '#F0F0F0' # Blanco/Gris claro por defecto
+    
     if val < 0:
-        color = '#E57373'  # Rojo para valores negativos
+        color = '#FF1744' # Rojo neón BBG
     elif val > 0:
-        color = '#81C784'  # Verde para valores positivos
+        color = '#00E676' # Verde neón BBG
     elif val == 0:
-        color = '#9E9E9E'  # Gris para valores iguales a cero
+        color = '#FF9800' # Naranja/Ámbar BBG para estancado
+        
     return 'color: %s' % color
 
-def style_performance(val, is_dark_mode=False):
+def style_performance(val, is_dark_mode=True): # Default a True para estilo BBG
+    # Paleta Bloomberg Terminal
     light_palette = {
-        'positive': '#4CAF50',  # Green
-        'negative': '#F44336',  # Red
-        'neutral': '#9E9E9E',   # Gray
-        'background': '#FFFFFF' # White
+        'positive': '#007000', 
+        'negative': '#D32F2F', 
+        'neutral':  '#424242', 
+        'background': '#FFFFFF',
+        'text_base': '#000000'
     }
+    
+    # Paleta Dark (La clásica BBG)
     dark_palette = {
-        'positive': '#81C784',  # Light Green
-        'negative': '#E57373',  # Light Red
-        'neutral': '#B0BEC5',   # Light Blue-Gray
-        'background': '#424242' # Dark Gray
+        'positive': '#00FF00', # Verde Matrix/Terminal
+        'negative': '#FF0000', # Rojo Puro
+        'neutral':  '#FF9800', # Ámbar característico
+        'background': '#000000', # Fondo Negro absoluto
+        'text_base': '#E0E0E0'   # Blanco humo
     }
 
     palette = dark_palette if is_dark_mode else light_palette
+    
+    # Estilo de fuente Monospace (Tipo Terminal)
+    font_style = 'font-family: "Consolas", "Courier New", monospace;'
 
     if pd.isna(val):
-        return 'background-color: transparent'
-    
+        return f'background-color: transparent; {font_style}'
+
+    # Manejo de Strings (ej: porcentajes como texto)
     if isinstance(val, str):
         if val.endswith('%'):
-            num_val = float(val.strip('%')) / 100
+            try:
+                num_val = float(val.strip('%')) / 100
+            except ValueError:
+                return f'color: {palette["text_base"]}; background-color: {palette["background"]}; {font_style}'
         else:
-            return f'background-color: {palette["background"]}; color: {"white" if is_dark_mode else "black"}; font-weight: bold;'
+            return f'background-color: {palette["background"]}; color: {palette["text_base"]}; font-weight: bold; {font_style}'
     else:
         num_val = val
 
+    # Determinar color base
     if num_val < 0:
-        color = palette['negative']
+        base_color = palette['negative']
     elif num_val > 0:
-        color = palette['positive']
+        base_color = palette['positive']
     else:
-        color = palette['neutral']
+        base_color = palette['neutral']
 
+    # Cálculo de intensidad para el fondo (Heatmap)
+    # BBG suele usar fondos negros con texto de color, pero si usamos fondo:
     intensity = 1 - 1 / (1 + abs(num_val) * 20)
     
-    rgb = colors.to_rgb(color)
-    rgba = (*rgb, intensity)
+    rgb = colors.to_rgb(base_color)
+    rgba = (*rgb, intensity * 0.6) # Reducimos opacidad máx para no saturar
 
-    text_color = color
+    # Lógica de contraste de texto:
+    # Si estamos en modo oscuro y la intensidad es baja, el texto debe ser el color neón.
+    # Si la intensidad es muy alta (fondo sólido), el texto debe ser negro para leerse.
+    if is_dark_mode:
+        if intensity > 0.5: 
+            text_color = 'black' # Contraste sobre fondo neón brillante
+        else:
+            text_color = base_color # Texto neón sobre fondo negro
+    else:
+        text_color = base_color
+
+    return f'background-color: rgba{rgba}; color: {text_color}; font-weight: bold; {font_style}'
+
+def apply_styles(df, is_dark_mode=True):
+    # Aplicamos propiedades globales de tabla estilo terminal
+    styles = df.style.applymap(lambda x: style_performance(x, is_dark_mode))
     
-    return f'background-color: rgba{rgba}; color: {text_color}; font-weight: bold;'
-
-def apply_styles(df, is_dark_mode=False):
-    return df.style.applymap(lambda x: style_performance(x, is_dark_mode))
-
-
-
+    # Si es modo oscuro, forzamos el fondo de toda la tabla a negro para unificar
+    if is_dark_mode:
+        styles = styles.set_properties(**{
+            'background-color': '#000000',
+            'border-color': '#333333' # Bordes sutiles
+        })
+        
+    return styles
 
 
 
