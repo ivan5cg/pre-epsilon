@@ -389,24 +389,27 @@ def render_kpi(
     value,
     unit="",
     color_val=None,
-    decimals=2,
+    is_currency=False,
+    decimals=0,
     force_color=None,
     footer=None
 ):
-    # Color
+    # Color automático
     color_class = "val-neu"
     if force_color:
         color_class = force_color
     elif color_val is not None:
-        color_class = "val-pos" if color_val > 0 else "val-neg" if color_val < 0 else "val-neu"
+        if color_val > 0:
+            color_class = "val-pos"
+        elif color_val < 0:
+            color_class = "val-neg"
 
-    # Formato numérico correcto
+    # Formato numérico Bloomberg-like
     if isinstance(value, (int, float)):
-        if decimals is None:
-            display_val = str(value)
+        if is_currency:
+            display_val = f"{value:,.0f}".replace(",", ".")
         else:
-            display_val = f"{value:,.{decimals}f}"
-            display_val = display_val.replace(",", "_").replace(".", ",").replace("_", ".")
+            display_val = f"{value:,.{decimals}f}".replace(",", "_").replace(".", ",").replace("_", ".")
     else:
         display_val = value
 
@@ -421,7 +424,6 @@ def render_kpi(
         {footer_html}
     </div>
     """
-
 
 
 col1, col2, col3, col4, col5,col6,col7 = st.columns(7)
