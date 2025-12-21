@@ -182,171 +182,25 @@ def apply_styles(df, is_dark_mode=False):
 
 
 
-# Colores BBG compactos
-BBG = {
-    "pos": "#00ff9c",    # verde brillante BBG
-    "neg": "#ff4d4d",    # rojo BBG
-    "neu": "#eaeaea",    # texto neutro
-    "header": "#ffb000", # ámbar para headers
-    "border": "#2a2a2a",
-    "hover": "#050505",
-    "bg": "#000000"
-}
 
-def _to_num(val):
-    """Intenta convertir val a float; acepta strings numéricos y porcentajes '1.23%'."""
-    if pd.isna(val):
-        return None
-    # Si es numérico ya
-    if isinstance(val, (int, float, np.integer, np.floating)):
-        return float(val)
-    # Si es string con %
-    if isinstance(val, str):
-        s = val.strip().replace(" ", "")
-        if s.endswith("%"):
-            try:
-                return float(s.rstrip("%").replace(",", "."))
-            except:
-                return None
-        # Intentar convertir con coma decimal y con punto decimal
-        for rep in ((".", ""), (",", "."), ("", "")):
-            try:
-                return float(s.replace(".", "").replace(",", "."))
-            except:
-                pass
-    return None
 
-def color_pos_neg_zero(val):
-    """
-    Devuelve CSS para texto en estilo BBG: color + bold.
-    Solo colorea si el valor es convertible a número (incluye 'x%').
-    """
-    num = _to_num(val)
-    if num is None:
-        return ""  # no tocar
-    if num > 0:
-        color = BBG["pos"]
-    elif num < 0:
-        color = BBG["neg"]
-    else:
-        color = BBG["neu"]
-    return f"color: {color}; font-weight: 700;"
 
-def style_performance(val, decimals=2):
-    """
-    Similar a color_pos_neg_zero pero también aplica alineación y deja el
-    color del texto como BBG. No usa background-color para mantener el look terminal.
-    Devuelve CSS string.
-    """
-    num = _to_num(val)
-    if num is None:
-        # Para no numéricos no forzamos nada (dejará el estilo por defecto)
-        return ""
-    # Obtenemos color según signo
-    if num > 0:
-        color = BBG["pos"]
-    elif num < 0:
-        color = BBG["neg"]
-    else:
-        color = BBG["neu"]
-    # Alineación a la derecha (números), bold
-    return f"color: {color}; font-weight: 700; text-align: right;"
 
-def _format_number(x, decimals=2):
-    """Formato de número: separador de miles '.' y decimales ',' (estilo europeo)."""
-    if pd.isna(x):
-        return ""
-    num = _to_num(x)
-    if num is None:
-        return x
-    fmt = f"{{:,.{decimals}f}}".format(num)
-    # Cambiamos formato 1,234.56 -> 1.234,56
-    fmt = fmt.replace(",", "_").replace(".", ",").replace("_", ".")
-    return fmt
 
-def apply_bbg_style(df: pd.DataFrame, decimals=2, hide_index=False):
-    """
-    Devuelve un pandas.Styler con estilo Bloomberg-like listo para pasar a st.dataframe/st.write.
-    - decimals: número por defecto de decimales para columnas numéricas.
-    - hide_index: si quieres ocultar el índice al mostrar.
-    """
-    # Identificamos columnas numéricas (dtype numérico) y potenciales columnas con '%'
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    # También buscar columnas tipo object que mayoritariamente contengan '%'
-    percent_like = []
-    for col in df.select_dtypes(include=["object","string"]).columns:
-        sample = df[col].dropna().astype(str).head(20)
-        if len(sample) == 0:
-            continue
-        pct_count = sample.str.strip().str.endswith("%").sum()
-        if pct_count >= max(1, int(0.6 * len(sample))):  # si mayoría parecen %
-            percent_like.append(col)
 
-    # Construimos el styler
-    sty = df.style
 
-    # Formateo numérico para columnas detectadas
-    fmt_map = {col: (lambda x, d=decimals: _format_number(x, d)) for col in numeric_cols + percent_like}
-    sty = sty.format(fmt_map, na_rep="")
 
-    # Aplicamos coloración por valor (solo texto) en columnas numéricas y percent_like
-    cols_to_color = numeric_cols + percent_like
-    if cols_to_color:
-        sty = sty.applymap(color_pos_neg_zero, subset=cols_to_color)
 
-    # Estilos de tabla generales (Roboto Mono, fondo negro, headers ámbar)
-    table_styles = [
-        {"selector": "table",
-         "props": [
-             ("background-color", BBG["bg"]),
-             ("color", BBG["neu"]),
-             ("font-family", "Roboto Mono, monospace"),
-             ("border-collapse", "collapse"),
-             ("width", "100%")
-         ]},
-        {"selector": "th",
-         "props": [
-             ("background-color", BBG["bg"]),
-             ("color", BBG["header"]),
-             ("border-bottom", f"1px solid {BBG['border']}"),
-             ("text-transform", "uppercase"),
-             ("font-weight", "700"),
-             ("font-size", "0.75rem"),
-             ("padding", "6px 8px"),
-             ("text-align", "left")
-         ]},
-        {"selector": "td",
-         "props": [
-             ("background-color", BBG["bg"]),
-             ("border-bottom", "1px solid #1f1f1f"),
-             ("padding", "4px 8px"),
-             ("font-size", "0.8rem"),
-             ("text-align", "right")  # por defecto números a la derecha
-         ]},
-        {"selector": "tbody tr:hover td",
-         "props": [
-             ("background-color", BBG["hover"])
-         ]},
-        # Alineación especial: forzamos texto no numérico a la izquierda
-        {"selector": "tbody td",
-         "props": [
-             ("white-space", "nowrap")
-         ]}
-    ]
 
-    sty = sty.set_table_styles(table_styles)
 
-    # Ajustes por columna: si una columna no es numérica la alineamos a la izquierda
-    non_numeric = [c for c in df.columns if c not in cols_to_color]
-    for c in non_numeric:
-        sty = sty.set_properties(subset=[c], **{"text-align": "left", "font-family": "Roboto Mono, monospace"})
 
-    # Opciones visuales
-    if hide_index:
-        sty = sty.hide(axis="index")
 
-    return sty
+
+
+
+
+
 
 
 
@@ -793,9 +647,7 @@ with col1:
 
 
 
-    #st.write(tabla_resumen)
-
-    st.write(apply_bbg_style(tabla_resumen, decimals=3))
+    st.write(tabla_resumen)
 
 
 with col2:
