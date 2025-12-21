@@ -307,21 +307,21 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
     
     .kpi-card {
-        background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+        background-color: #1a1f3a;  /* Fondo plano azul oscuro */
         border: 1px solid #2a3f5f;
         border-left: 3px solid #FF8C00;  /* Borde naranja característico */
         border-radius: 2px;  /* Bloomberg usa esquinas más cuadradas */
         padding: 12px 8px;
         text-align: left;  /* Bloomberg alinea a la izquierda */
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         transition: all 0.2s ease;
         font-family: 'Roboto Mono', monospace;
     }
     .kpi-card:hover {
-        background: linear-gradient(135deg, #0d1230 0%, #1d2342 100%);
+        background-color: #1d2342;
         border-color: #3a5f8f;
         border-left-color: #FFA500;
-        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
     }
     .kpi-label {
         font-size: 0.7rem;
@@ -358,17 +358,6 @@ st.markdown("""
     }
     .val-neu { 
         color: #E8E8E8; 
-    }
-    
-    /* Efecto de terminal con líneas sutiles */
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(139, 163, 199, 0.2), transparent);
     }
 </style>
 """, unsafe_allow_html=True)
