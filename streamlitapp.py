@@ -222,28 +222,7 @@ def apply_styles(df, is_dark_mode=True):
         
     return styles
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#
 
 st.set_page_config(layout="wide")
 
