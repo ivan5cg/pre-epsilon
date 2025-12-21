@@ -306,48 +306,49 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
 
 :root {
-    --bg-main: #0c1022;
-    --bg-panel: #11162e;
-    --border-main: #2b3158;
+    --bg-main: #000000;
+    --bg-panel: #000000;
+
+    --border-main: #2a2a2a;
     --border-accent: #ff8c00;
 
-    --text-main: #e6e9f2;
-    --text-muted: #8c95c5;
+    --text-main: #eaeaea;
+    --text-muted: #8a8a8a;
 
-    --pos: #00ff9c;
-    --neg: #ff4d4d;
-    --neu: #e6e6e6;
+    --pos: #00ff9c;     /* verde BBG */
+    --neg: #ff4d4d;     /* rojo BBG */
+    --neu: #eaeaea;
     --cyan: #00d9ff;
     --amber: #ffb000;
 }
 
-/* Contenedor KPI estilo terminal */
+/* KPI = bloque de terminal, no tarjeta */
 .kpi-card {
     background-color: var(--bg-panel);
     border: 1px solid var(--border-main);
     border-left: 4px solid var(--border-accent);
     border-radius: 0;
-    padding: 8px 10px;
+    padding: 6px 8px;
     font-family: 'Roboto Mono', monospace;
     box-shadow: none;
 }
 
-/* Hover mínimo (Bloomberg no hace florituras) */
+/* Hover casi imperceptible */
 .kpi-card:hover {
-    background-color: #151b3d;
+    background-color: #050505;
 }
 
-/* Label tipo BBG */
+/* Etiqueta */
 .kpi-label {
     font-size: 0.65rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
     font-weight: 500;
 }
 
-/* Valor principal */
+/* Valor */
 .kpi-value {
     font-size: 1.35rem;
     font-weight: 700;
@@ -363,30 +364,20 @@ st.markdown("""
     font-weight: 400;
 }
 
-/* Colores Bloomberg clásicos */
-.val-pos { 
-    color: var(--pos);
-}
-.val-neg { 
-    color: var(--neg);
-}
-.val-neu { 
-    color: var(--neu);
-}
-.val-cyan {
-    color: var(--cyan);
-}
-.val-amber {
-    color: var(--amber);
-}
+/* Colores Bloomberg */
+.val-pos { color: var(--pos); }
+.val-neg { color: var(--neg); }
+.val-neu { color: var(--neu); }
+.val-cyan { color: var(--cyan); }
+.val-amber { color: var(--amber); }
 
-/* Separador inferior opcional */
+/* Footer tipo terminal */
 .kpi-footer {
-    margin-top: 4px;
+    margin-top: 2px;
     font-size: 0.65rem;
-    color: #6f78b5;
+    color: #6f6f6f;
     border-top: 1px solid var(--border-main);
-    padding-top: 3px;
+    padding-top: 2px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -398,27 +389,24 @@ def render_kpi(
     value,
     unit="",
     color_val=None,
-    is_currency=False,
-    decimals=0,
+    decimals=2,
     force_color=None,
     footer=None
 ):
-    # Color automático
+    # Color
     color_class = "val-neu"
     if force_color:
         color_class = force_color
     elif color_val is not None:
-        if color_val > 0:
-            color_class = "val-pos"
-        elif color_val < 0:
-            color_class = "val-neg"
+        color_class = "val-pos" if color_val > 0 else "val-neg" if color_val < 0 else "val-neu"
 
-    # Formato numérico Bloomberg-like
+    # Formato numérico correcto
     if isinstance(value, (int, float)):
-        if is_currency:
-            display_val = f"{value:,.0f}".replace(",", ".")
+        if decimals is None:
+            display_val = str(value)
         else:
-            display_val = f"{value:,.{decimals}f}".replace(",", "_").replace(".", ",").replace("_", ".")
+            display_val = f"{value:,.{decimals}f}"
+            display_val = display_val.replace(",", "_").replace(".", ",").replace("_", ".")
     else:
         display_val = value
 
@@ -433,6 +421,7 @@ def render_kpi(
         {footer_html}
     </div>
     """
+
 
 
 col1, col2, col3, col4, col5,col6,col7 = st.columns(7)
