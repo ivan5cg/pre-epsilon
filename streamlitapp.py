@@ -125,7 +125,7 @@ st.markdown("""
 <style>
 
 /* =========================
-   BLOOMBERG TICKER BAR
+   BLOOMBERG TICKER BAR (REAL)
    ========================= */
 
 .bbg-ticker-wrapper {
@@ -140,18 +140,18 @@ st.markdown("""
 }
 
 .bbg-ticker-track {
-    display: inline-block;
+    display: inline-flex;
     white-space: nowrap;
     will-change: transform;
-    animation: bbg-scroll 40s linear infinite;
+    animation: bbg-scroll 18s linear infinite;
 }
 
 .bbg-ticker-item {
-    display: inline-block;
-    padding: 0 18px;
-    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 22px;
+    font-size: 0.9rem;
     font-weight: 700;
-    color: #eaeaea;
 }
 
 .bbg-up { color: #00ff9c; }
@@ -160,16 +160,16 @@ st.markdown("""
 
 .bbg-sep {
     color: #6f6f6f;
-    padding: 0 8px;
+    padding: 0 6px;
 }
 
-/* Animación */
+/* El truco clave */
 @keyframes bbg-scroll {
     0% {
-        transform: translateX(100%);
+        transform: translateX(0);
     }
     100% {
-        transform: translateX(-100%);
+        transform: translateX(-50%);
     }
 }
 
@@ -177,15 +177,48 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+TICKERS = {
+    "SPY": "SPY",
+    "BTCUSD": "BTC-USD",
+    "GLD": "GLD",
+    "QQQ": "QQQ",
+    "TSLA": "TSLA"
+}
+
+def fetch_tickers_yf(tickers):
+    data = yf.download(
+        list(tickers.values()),
+        period="2d",
+        interval="1d",
+        group_by="ticker",
+        auto_adjust=True,
+        progress=False
+    )
+
+    out = []
+    for label, yf_ticker in tickers.items():
+        try:
+            df = data[yf_ticker]
+            last = df.iloc[-1]
+            prev = df.iloc[-2]
+
+            price = last["Close"]
+            chg_pct = (price / prev["Close"] - 1) * 100
+
+            out.append({
+                "symbol": label,
+                "price": price,
+                "chg": chg_pct
+            })
+        except Exception:
+            continue
+
+    return out
+
+
+
 def render_bbg_ticker(tickers):
-    """
-    tickers = lista de dicts:
-    [
-        {"symbol": "ES1 INDEX", "price": 4978.25, "chg": 0.42},
-        ...
-    ]
-    """
-    html = '<div class="bbg-ticker-wrapper"><div class="bbg-ticker-track">'
+    track = ""
 
     for t in tickers:
         chg = t["chg"]
@@ -199,30 +232,32 @@ def render_bbg_ticker(tickers):
             cls = "bbg-flat"
             sign = ""
 
-        html += f'''
+        track += f"""
         <span class="bbg-ticker-item {cls}">
             {t["symbol"]} {t["price"]:.2f} {sign}{chg:.2f}%
         </span>
         <span class="bbg-sep">│</span>
-        '''
+        """
 
-    # duplicamos el contenido para scroll infinito limpio
-    html += html
-    html += '</div></div>'
+    # DUPLICAMOS EL CONTENIDO (CLAVE)
+    html = f"""
+    <div class="bbg-ticker-wrapper">
+        <div class="bbg-ticker-track">
+            {track}
+            {track}
+        </div>
+    </div>
+    """
 
     return html
 
 
-tickers = [
-    {"symbol": "ES1 INDEX", "price": 4978.25, "chg": 0.42},
-    {"symbol": "NQ1 INDEX", "price": 17234.50, "chg": -0.31},
-    {"symbol": "DAX INDEX", "price": 18342.10, "chg": 0.18},
-    {"symbol": "VIX INDEX", "price": 14.82, "chg": 0.00},
-]
+tickers_data = fetch_tickers_yf(TICKERS)
 
-st.markdown(render_bbg_ticker(tickers), unsafe_allow_html=True)
-
-
+st.markdown(
+    render_bbg_ticker(tickers_data),
+    unsafe_allow_html=True
+)
 
 is_dark_mode = st.get_option("theme.base") == "dark"
 
