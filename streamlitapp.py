@@ -218,7 +218,7 @@ def fetch_tickers_yf(tickers):
 
 
 def render_bbg_ticker(tickers):
-    track = ""
+    items_html = ""
 
     for t in tickers:
         chg = t["chg"]
@@ -232,22 +232,21 @@ def render_bbg_ticker(tickers):
             cls = "bbg-flat"
             sign = ""
 
-        track += f"""
-        <span class="bbg-ticker-item {cls}">
-            {t["symbol"]} {t["price"]:.2f} {sign}{chg:.2f}%
-        </span>
-        <span class="bbg-sep">│</span>
-        """
+        items_html += (
+            f'<span class="bbg-ticker-item {cls}">'
+            f'{t["symbol"]} {t["price"]:.2f} {sign}{chg:.2f}%'
+            f'</span>'
+            f'<span class="bbg-sep">│</span>'
+        )
 
-    # DUPLICAMOS EL CONTENIDO (CLAVE)
-    html = f"""
-    <div class="bbg-ticker-wrapper">
-        <div class="bbg-ticker-track">
-            {track}
-            {track}
-        </div>
-    </div>
-    """
+    # Duplicamos para scroll infinito
+    html = (
+        '<div class="bbg-ticker-wrapper">'
+        '<div class="bbg-ticker-track">'
+        f'{items_html}{items_html}'
+        '</div>'
+        '</div>'
+    )
 
     return html
 
