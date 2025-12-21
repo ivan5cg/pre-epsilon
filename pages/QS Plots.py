@@ -118,11 +118,11 @@ def process_portfolio_data(opcion_seleccionada):
     # Download prices
     precios = pd.DataFrame(index=rango_fechas)
     for i in movimientos["Yahoo Ticker"].dropna().unique():
-        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Adj Close"]
+        precios[i] = yf.download(i, start=fecha_inicio, progress=False)["Close"]
 
-    eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+    eurusd = yf.download("EURUSD=X", start=fecha_inicio, progress=False).resample("B").ffill()["Close"]
 
-    precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"] / eurusd * 0.0002396
+    precios["WBIT"] = yf.download("BTC-USD", start=fecha_inicio, progress=False).resample("B").ffill()["Close"] / eurusd * 0.0002396
     for ticker in ["JOE", "BN", "BAM"]:
         precios[ticker] = precios[ticker] / eurusd
 
@@ -148,7 +148,7 @@ def process_portfolio_data(opcion_seleccionada):
     rendimientos = precios.pct_change()
 
     # Download and calculate benchmark returns
-    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False).resample("B").ffill()["Adj Close"]
+    benchmark = yf.download("SPYI.DE", start=fecha_inicio, progress=False).resample("B").ffill()["Close"]
     rendimiento_benchmark = benchmark.pct_change().fillna(0)
 
     # Calculate positions
