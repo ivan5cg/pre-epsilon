@@ -21,6 +21,22 @@ import quantstats as qs
 from matplotlib import colors
 from scipy import stats
 
+st.markdown("""
+<style>
+    /* Fondo global estilo Bloomberg */
+    .stApp {
+        background-color: #0A0E27;
+    }
+    
+    /* Títulos estilo Bloomberg */
+    h1, h2, h3 {
+        color: #FF8C00 !important;
+        font-family: 'Roboto Mono', monospace !important;
+        font-weight: 700 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 is_dark_mode = st.get_option("theme.base") == "dark"
 
 def color_negativo_positivo_cero(val):
