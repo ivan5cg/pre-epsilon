@@ -121,6 +121,109 @@ section[data-testid="stSidebar"] {
 """, unsafe_allow_html=True)
 
 
+st.markdown("""
+<style>
+
+/* =========================
+   BLOOMBERG TICKER BAR
+   ========================= */
+
+.bbg-ticker-wrapper {
+    position: relative;
+    width: 100%;
+    height: 32px;
+    overflow: hidden;
+    background-color: #000000;
+    border-top: 1px solid #2a2a2a;
+    border-bottom: 1px solid #2a2a2a;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.bbg-ticker-track {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+    animation: bbg-scroll 40s linear infinite;
+}
+
+.bbg-ticker-item {
+    display: inline-block;
+    padding: 0 18px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #eaeaea;
+}
+
+.bbg-up { color: #00ff9c; }
+.bbg-down { color: #ff4d4d; }
+.bbg-flat { color: #eaeaea; }
+
+.bbg-sep {
+    color: #6f6f6f;
+    padding: 0 8px;
+}
+
+/* Animación */
+@keyframes bbg-scroll {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+def render_bbg_ticker(tickers):
+    """
+    tickers = lista de dicts:
+    [
+        {"symbol": "ES1 INDEX", "price": 4978.25, "chg": 0.42},
+        ...
+    ]
+    """
+    html = '<div class="bbg-ticker-wrapper"><div class="bbg-ticker-track">'
+
+    for t in tickers:
+        chg = t["chg"]
+        if chg > 0:
+            cls = "bbg-up"
+            sign = "+"
+        elif chg < 0:
+            cls = "bbg-down"
+            sign = ""
+        else:
+            cls = "bbg-flat"
+            sign = ""
+
+        html += f'''
+        <span class="bbg-ticker-item {cls}">
+            {t["symbol"]} {t["price"]:.2f} {sign}{chg:.2f}%
+        </span>
+        <span class="bbg-sep">│</span>
+        '''
+
+    # duplicamos el contenido para scroll infinito limpio
+    html += html
+    html += '</div></div>'
+
+    return html
+
+
+tickers = [
+    {"symbol": "ES1 INDEX", "price": 4978.25, "chg": 0.42},
+    {"symbol": "NQ1 INDEX", "price": 17234.50, "chg": -0.31},
+    {"symbol": "DAX INDEX", "price": 18342.10, "chg": 0.18},
+    {"symbol": "VIX INDEX", "price": 14.82, "chg": 0.00},
+]
+
+st.markdown(render_bbg_ticker(tickers), unsafe_allow_html=True)
+
+
+
 is_dark_mode = st.get_option("theme.base") == "dark"
 
 def color_negativo_positivo_cero(val):
