@@ -287,42 +287,73 @@ xirr_benchmark = xirr_benchmark * 100
 
 st.markdown("""
 <style>
+    /* Fuente monoespaciada estilo Bloomberg */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap');
+    
     .kpi-card {
-        background-color: #1E1E1E;
-        border: 1px solid #333;
-        border-radius: 8px;
-        padding: 15px 5px;
-        text-align: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s ease-in-out;
+        background: linear-gradient(135deg, #0A0E27 0%, #1a1f3a 100%);
+        border: 1px solid #2a3f5f;
+        border-left: 3px solid #FF8C00;  /* Borde naranja característico */
+        border-radius: 2px;  /* Bloomberg usa esquinas más cuadradas */
+        padding: 12px 8px;
+        text-align: left;  /* Bloomberg alinea a la izquierda */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        transition: all 0.2s ease;
+        font-family: 'Roboto Mono', monospace;
     }
     .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-        border-color: #444;
+        background: linear-gradient(135deg, #0d1230 0%, #1d2342 100%);
+        border-color: #3a5f8f;
+        border-left-color: #FFA500;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
     .kpi-label {
-        font-size: 0.8rem;
-        color: #888;
+        font-size: 0.7rem;
+        color: #8BA3C7;  /* Azul grisáceo típico de Bloomberg */
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 5px;
-        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        font-weight: 500;
+        font-family: 'Roboto Mono', monospace;
     }
     .kpi-value {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        color: #FFF;
+        color: #FFFFFF;
+        font-family: 'Roboto Mono', monospace;
+        line-height: 1.2;
     }
     .kpi-unit {
-        font-size: 0.9rem;
-        color: #666;
-        margin-left: 2px;
-        font-weight: 500;
+        font-size: 0.85rem;
+        color: #6B7FA8;
+        margin-left: 3px;
+        font-weight: 400;
+        font-family: 'Roboto Mono', monospace;
     }
-    .val-pos { color: #4CAF50; }
-    .val-neg { color: #FF5252; }
-    .val-neu { color: #B0BEC5; }
+    
+    /* Colores Bloomberg más característicos */
+    .val-pos { 
+        color: #00D9FF;  /* Azul cyan brillante */
+        text-shadow: 0 0 8px rgba(0, 217, 255, 0.3);
+    }
+    .val-neg { 
+        color: #FF6B6B;  /* Rojo más suave */
+        text-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+    }
+    .val-neu { 
+        color: #E8E8E8; 
+    }
+    
+    /* Efecto de terminal con líneas sutiles */
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(139, 163, 199, 0.2), transparent);
+    }
 </style>
 """, unsafe_allow_html=True)
 
