@@ -537,12 +537,12 @@ with col5:
 
 with col6:
     xirr_portfolio_ = xirr_portfolio.iloc[-1].round(2).values[0]
-    st.markdown(render_kpi("IRR", xirr_portfolio_, "%", xirr_portfolio_), unsafe_allow_html=True)
+    st.markdown(render_kpi("IRR", xirr_portfolio_, "%", xirr_portfolio_,decimals=2), unsafe_allow_html=True)
 
 with col7:
     gap = xirr_portfolio.iloc[-1].round(2).values[0] - xirr_benchmark.iloc[-1].round(2).values[0]
     gap = gap.round(2)
-    st.markdown(render_kpi("IRR delta", gap, "%", gap), unsafe_allow_html=True)
+    st.markdown(render_kpi("IRR delta", gap, "%", gap,decimals=2), unsafe_allow_html=True)
 
 
 
