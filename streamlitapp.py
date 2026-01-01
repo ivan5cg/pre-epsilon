@@ -250,11 +250,8 @@ def render_bbg_ticker(pct_var, prices):
     return html
 
 
-
-tickers_data = last_real_pct_change(variacion_banner, precios_banner)
-
 st.markdown(
-    render_bbg_ticker(tickers_data),
+    render_bbg_ticker(variacion_banner, precios_banner),
     unsafe_allow_html=True
 )
 
