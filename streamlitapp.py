@@ -212,45 +212,60 @@ precios_banner = precios_banner.iloc[-1]
 
 
 def render_bbg_ticker(pct_var, prices):
+    """
+    pct_var: dict-like mapping symbol -> % change (float or NaN)
+    prices: pd.Series (last row) or DataFrame (will use last row)
+    Returns: HTML string
+    """
     items_html = ""
 
-    # prices can be either a DataFrame (use last row) or already a Series of last prices
+    # obtener última fila de precios si es DataFrame
     if isinstance(prices, pd.Series):
         last_prices = prices
     else:
         last_prices = prices.iloc[-1]
 
     for symbol, chg in pct_var.items():
-        # fetch price safely
+        # precio seguro
         try:
             price = last_prices.get(symbol) if hasattr(last_prices, "get") else last_prices[symbol]
         except Exception:
             price = float("nan")
 
+        # decidir clase y formato del cambio
         if pd.isna(chg):
             chg_cls = "bbg-flat"
+            arrow = "—"
             chg_str = "--"
         elif chg > 0:
             chg_cls = "bbg-up"
+            arrow = "▲"
             chg_str = f"+{chg:.2f}%"
         elif chg < 0:
             chg_cls = "bbg-down"
+            arrow = "▼"
             chg_str = f"{chg:.2f}%"
         else:
             chg_cls = "bbg-flat"
+            arrow = "—"
             chg_str = "0.00%"
 
         price_str = "--" if pd.isna(price) else f"{price:.2f}"
 
+        # item: símbolo | precio | cambio (flecha + valor)
         items_html += (
             '<span class="bbg-ticker-item">'
-            f'<span class="bbg-symbol">{symbol}</span> '
-            f'<span class="bbg-price">{price_str}</span> '
-            f'<span class="bbg-chg {chg_cls}">{chg_str}</span>'
+            f'  <span class="bbg-symbol" title="{symbol}">{symbol}</span>'
+            f'  <span class="bbg-price" title="Precio">{price_str}</span>'
+            f'  <span class="bbg-chg {chg_cls}" title="Cambio">'
+            f'    <span class="bbg-arrow" aria-hidden="true">{arrow}</span>'
+            f'    <span class="bbg-chg-val">{chg_str}</span>'
+            f'  </span>'
             '</span>'
-            '<span class="bbg-sep">│</span>'
+            '<span class="bbg-sep" aria-hidden="true">│</span>'
         )
 
+    # duplicado para efecto marquee / track continuo
     html = (
         '<div class="bbg-ticker-wrapper">'
         '<div class="bbg-ticker-track">'
