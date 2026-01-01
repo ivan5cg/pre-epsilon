@@ -213,29 +213,34 @@ precios_banner = yf.download(tickers=list(TICKERS.values()), period="5d", interv
 
 
 
-def render_bbg_ticker(tickers):
+def render_bbg_ticker(pct_var, prices):
     items_html = ""
 
-    for t in tickers:
-        chg = t["chg"]
-        if chg > 0:
+    last_prices = prices.iloc[-1]
+
+    for symbol, chg in pct_var.items():
+        price = last_prices[symbol]
+
+        if pd.isna(chg):
+            cls = "bbg-flat"
+            chg_str = "--"
+        elif chg > 0:
             cls = "bbg-up"
-            sign = "+"
+            chg_str = f"+{chg:.2f}%"
         elif chg < 0:
             cls = "bbg-down"
-            sign = ""
+            chg_str = f"{chg:.2f}%"
         else:
             cls = "bbg-flat"
-            sign = ""
+            chg_str = "0.00%"
 
         items_html += (
             f'<span class="bbg-ticker-item {cls}">'
-            f'{t["symbol"]} {t["price"]:.2f} {sign}{chg:.2f}%'
+            f'{symbol} {price:.2f} {chg_str}'
             f'</span>'
             f'<span class="bbg-sep">│</span>'
         )
 
-    # Duplicamos para scroll infinito
     html = (
         '<div class="bbg-ticker-wrapper">'
         '<div class="bbg-ticker-track">'
@@ -245,6 +250,7 @@ def render_bbg_ticker(tickers):
     )
 
     return html
+
 
 
 tickers_data = last_real_pct_change(precios_banner)
