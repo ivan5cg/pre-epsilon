@@ -214,10 +214,18 @@ precios_banner = precios_banner.iloc[-1]
 def render_bbg_ticker(pct_var, prices):
     items_html = ""
 
-    last_prices = prices.iloc[-1]
+    # prices can be either a DataFrame (use last row) or already a Series of last prices
+    if isinstance(prices, pd.Series):
+        last_prices = prices
+    else:
+        last_prices = prices.iloc[-1]
 
     for symbol, chg in pct_var.items():
-        price = last_prices[symbol]
+        # fetch price safely (works for Series and Index)
+        try:
+            price = last_prices.get(symbol) if hasattr(last_prices, "get") else last_prices[symbol]
+        except Exception:
+            price = float("nan")
 
         if pd.isna(chg):
             cls = "bbg-flat"
@@ -232,9 +240,11 @@ def render_bbg_ticker(pct_var, prices):
             cls = "bbg-flat"
             chg_str = "0.00%"
 
+        price_str = "--" if pd.isna(price) else f"{price:.2f}"
+
         items_html += (
             f'<span class="bbg-ticker-item {cls}">'
-            f'{symbol} {price:.2f} {chg_str}'
+            f'{symbol} {price_str} {chg_str}'
             f'</span>'
             f'<span class="bbg-sep">│</span>'
         )
@@ -248,7 +258,6 @@ def render_bbg_ticker(pct_var, prices):
     )
 
     return html
-
 
 st.markdown(
     render_bbg_ticker(variacion_banner, precios_banner),
