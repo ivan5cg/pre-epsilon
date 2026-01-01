@@ -207,10 +207,8 @@ def last_real_pct_change(prices: pd.DataFrame) -> pd.Series:
     return pd.Series(pct_changes)
 
 precios_banner = yf.download(tickers=list(TICKERS.values()), period="5d", interval="1d",prepost=True,progress=False)["Close"].ffill()
-
-
-
-
+variacion_banner = last_real_pct_change(precios_banner)
+precios_banner = precios_banner.iloc[-1]
 
 
 def render_bbg_ticker(pct_var, prices):
@@ -253,7 +251,7 @@ def render_bbg_ticker(pct_var, prices):
 
 
 
-tickers_data = last_real_pct_change(precios_banner)
+tickers_data = last_real_pct_change(variacion_banner, precios_banner)
 
 st.markdown(
     render_bbg_ticker(tickers_data),
