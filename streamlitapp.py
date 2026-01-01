@@ -222,22 +222,20 @@ def render_bbg_ticker(pct_var, prices):
     prices: pd.Series (last row) or DataFrame (will use last row)
     Returns: HTML string
     """
+
     items_html = ""
 
-    # obtener última fila de precios si es DataFrame
-    if isinstance(prices, pd.Series):
-        last_prices = prices
-    else:
-        last_prices = prices.iloc[-1]
+    # última fila de precios
+    last_prices = prices if isinstance(prices, pd.Series) else prices.iloc[-1]
 
     for symbol, chg in pct_var.items():
         # precio seguro
         try:
-            price = last_prices.get(symbol) if hasattr(last_prices, "get") else last_prices[symbol]
+            price = last_prices.get(symbol)
         except Exception:
             price = float("nan")
 
-        # decidir clase y formato del cambio
+        # formato del cambio (SOLO esto se colorea)
         if pd.isna(chg):
             chg_cls = "bbg-flat"
             arrow = "—"
@@ -257,24 +255,25 @@ def render_bbg_ticker(pct_var, prices):
 
         price_str = "--" if pd.isna(price) else f"{price:.2f}"
 
-        # item: símbolo | precio | cambio (flecha + valor)
+        # ESTRUCTURA CORRECTA:
+        # [ TICKER ] [ PRECIO ] [ VARIACIÓN (coloreada) ]
         items_html += (
             '<span class="bbg-ticker-item">'
-            f'  <span class="bbg-symbol" title="{symbol}">{symbol}</span>'
-            f'  <span class="bbg-price" title="Precio">{price_str}</span>'
-            f'  <span class="bbg-chg {chg_cls}" title="Cambio">'
-            f'    <span class="bbg-arrow" aria-hidden="true">{arrow}</span>'
+            f'  <span class="bbg-symbol">{symbol}</span>'
+            f'  <span class="bbg-price">{price_str}</span>'
+            f'  <span class="bbg-chg {chg_cls}">'
+            f'    <span class="bbg-arrow">{arrow}</span>'
             f'    <span class="bbg-chg-val">{chg_str}</span>'
             f'  </span>'
             '</span>'
-            '<span class="bbg-sep" aria-hidden="true">│</span>'
+            ' <span class="bbg-sep">│</span> '
         )
 
-    # duplicado para efecto marquee / track continuo
+    # wrapper final (sin tocar animaciones ni estilos)
     html = (
         '<div class="bbg-ticker-wrapper">'
         '<div class="bbg-ticker-track">'
-        f'{items_html}{items_html}'
+        f'{items_html}'
         '</div>'
         '</div>'
     )
