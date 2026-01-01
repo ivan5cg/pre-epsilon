@@ -178,13 +178,18 @@ st.markdown("""
 
 
 TICKERS = {
-    "SPY": "SPY",
-    "BTCUSD": "BTC-USD",
-    "GLD": "GLD",
-    "QQQ": "QQQ",
-    "TSLA": "TSLA"
+    "SPY": "SPY",           # S&P 500 - Equities USA
+    "QQQ": "QQQ",           # Nasdaq 100 - Tech Heavy
+    "IWM": "IWM",           # Russell 2000 - Small Cap USA
+    "EEM": "EEM",           # MSCI Emerging Markets
+    "AGG": "AGG",           # Bloomberg Aggregate Bond Index
+    "TLT": "TLT",           # 20+ Year Treasury Bond
+    "GLD": "GLD",           # Gold - Commodities/Inflation Hedge
+    "USO": "USO",           # Oil - Energy/Commodities
+    "BTC-USD": "BTC-USD",   # Bitcoin - Crypto
+    "UUP": "UUP",           # US Dollar Index
+    "TSLA": "TSLA",         # Tesla - High Growth Stock
 }
-
 
 def last_real_pct_change(prices: pd.DataFrame) -> pd.Series:
     pct_changes = {}
