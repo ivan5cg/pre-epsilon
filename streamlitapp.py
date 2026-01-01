@@ -221,32 +221,34 @@ def render_bbg_ticker(pct_var, prices):
         last_prices = prices.iloc[-1]
 
     for symbol, chg in pct_var.items():
-        # fetch price safely (works for Series and Index)
+        # fetch price safely
         try:
             price = last_prices.get(symbol) if hasattr(last_prices, "get") else last_prices[symbol]
         except Exception:
             price = float("nan")
 
         if pd.isna(chg):
-            cls = "bbg-flat"
+            chg_cls = "bbg-flat"
             chg_str = "--"
         elif chg > 0:
-            cls = "bbg-up"
+            chg_cls = "bbg-up"
             chg_str = f"+{chg:.2f}%"
         elif chg < 0:
-            cls = "bbg-down"
+            chg_cls = "bbg-down"
             chg_str = f"{chg:.2f}%"
         else:
-            cls = "bbg-flat"
+            chg_cls = "bbg-flat"
             chg_str = "0.00%"
 
         price_str = "--" if pd.isna(price) else f"{price:.2f}"
 
         items_html += (
-            f'<span class="bbg-ticker-item {cls}">'
-            f'{symbol} {price_str} {chg_str}'
-            f'</span>'
-            f'<span class="bbg-sep">│</span>'
+            '<span class="bbg-ticker-item">'
+            f'<span class="bbg-symbol">{symbol}</span> '
+            f'<span class="bbg-price">{price_str}</span> '
+            f'<span class="bbg-chg {chg_cls}">{chg_str}</span>'
+            '</span>'
+            '<span class="bbg-sep">│</span>'
         )
 
     html = (
