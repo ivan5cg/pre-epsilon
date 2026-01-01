@@ -185,35 +185,31 @@ TICKERS = {
     "TSLA": "TSLA"
 }
 
-def fetch_tickers_yf(tickers):
-    data = yf.download(
-        list(tickers.values()),
-        period="2d",
-        interval="1d",
-        group_by="ticker",
-        auto_adjust=True,
-        progress=False
-    )
 
-    out = []
-    for label, yf_ticker in tickers.items():
-        try:
-            df = data[yf_ticker]
-            last = df.iloc[-1]
-            prev = df.iloc[-2]
+def last_real_pct_change(prices: pd.DataFrame) -> pd.Series:
+    pct_changes = {}
 
-            price = last["Close"]
-            chg_pct = (price / prev["Close"] - 1) * 100
+    for ticker in prices.columns:
+        s = prices[ticker]
 
-            out.append({
-                "symbol": label,
-                "price": price,
-                "chg": chg_pct
-            })
-        except Exception:
+        # nos quedamos solo con días donde el precio cambia
+        real_days = s[s.ne(s.shift())]
+
+        if len(real_days) < 2:
+            pct_changes[ticker] = float("nan")
             continue
 
-    return out
+        last = real_days.iloc[-1]
+        prev = real_days.iloc[-2]
+
+        pct_changes[ticker] = (last / prev - 1) *100
+
+    return pd.Series(pct_changes)
+
+precios_banner = yf.download(tickers=list(TICKERS.values()), period="5d", interval="1d",prepost=True,progress=False)["Close"].ffill()
+
+
+
 
 
 
@@ -251,7 +247,7 @@ def render_bbg_ticker(tickers):
     return html
 
 
-tickers_data = fetch_tickers_yf(TICKERS)
+tickers_data = last_real_pct_change(precios_banner)
 
 st.markdown(
     render_bbg_ticker(tickers_data),
