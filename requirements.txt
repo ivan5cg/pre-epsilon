@@ -15,4 +15,5 @@ mplfinance
 plotly
 quantstats
 pyxirr
-
+setuptools==69.5.1
+statsmodels
